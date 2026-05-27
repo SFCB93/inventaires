@@ -43,6 +43,8 @@ export function useInventoryDetailPage(inventory: InventoryWithCompartments) {
     })
   }
 
+  // photoStoragePath est toujours '' : l'upload Firebase Storage n'est pas implémenté,
+  // les photos sont stockées en base64 dans photoUrl ou comme URL externe.
   const handleAddItem = (compartmentId: string, values: ItemFormValues) =>
     run(() => createItemAction(id, { compartmentId, name: values.name, photoUrl: values.photoUrl, photoStoragePath: '', hasExpiry: values.hasExpiry, isCritical: values.isCritical }))
 
