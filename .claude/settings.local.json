@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(npx tsx *)",
+      "Bash(npm test *)",
+      "Bash(rm /Users/guillaumegremillet/src/inventaires/.claude/projects/-Users-guillaumegremillet-src-inventaires/memory/project_photo_optional_debt.md)",
+      "Bash(rmdir -p /Users/guillaumegremillet/src/inventaires/.claude/projects/-Users-guillaumegremillet-src-inventaires/memory/)",
+      "Bash(npm install *)",
+      "Bash(gsutil version *)",
+      "Bash(firebase --version)",
+      "Bash(npx vitest *)",
+      "Bash(git -C /Users/guillaumegremillet/src/inventaires diff --stat HEAD)",
+      "Bash(sed -i '' 's/{ name: \\\\\\(.*\\\\\\), isCritical: false }/{ name: \\\\1, hasExpiry: false, isCritical: false }/g' scripts/seed-dev.ts)",
+      "Bash(sed -i '' 's/{ name: \\\\\\(.*\\\\\\), isCritical: true }/{ name: \\\\1, hasExpiry: true, isCritical: true }/g' scripts/seed-dev.ts)",
+      "Bash(mkdir -p /Users/guillaumegremillet/src/inventaires/src/app/\\\\\\(backoffice\\\\\\)/dashboard/controles/\\\\[controleId\\\\])",
+      "Bash(mkdir -p /tmp/app-screenshots)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/login)",
+      "Bash(node /tmp/take-screenshots.mjs)",
+      "Bash(npx playwright *)",
+      "Read(//private/tmp/app-screenshots/**)",
+      "Bash(curl -s -o /dev/null -w \"server: %{http_code}\" http://localhost:3000/)",
+      "Bash(npx --yes @slidev/cli doc/slides.md)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3030)",
+      "Bash(jobs)",
+      "Bash(lsof -iTCP -sTCP:LISTEN)",
+      "Bash(kill 70941)",
+      "Bash(npx slidev *)",
+      "Bash(lsof -iTCP:3030 -sTCP:LISTEN)"
+    ],
+    "additionalDirectories": [
+      "/Users/guillaumegremillet/src/inventaires/src/app/(backoffice)/dashboard/controles"
+    ]
+  }
+}
