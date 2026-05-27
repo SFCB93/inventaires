@@ -96,6 +96,57 @@ Zustand uniquement pour l'état UI partagé entre plusieurs composants
 (ex : progression d'un inventaire en cours).
 L'état local reste dans les composants.
 
+### Réfléchir avant de coder
+Ne pas supposer. Ne pas masquer la confusion. Exposer les compromis.
+
+Avant d'implémenter :
+- Énoncer ses hypothèses explicitement. En cas de doute, demander.
+- Si plusieurs interprétations existent, les présenter — ne pas en choisir une silencieusement.
+- Si une approche plus simple existe, la proposer. Pousser en retour quand c'est justifié.
+- Si quelque chose n'est pas clair, s'arrêter. Nommer ce qui est confus. Demander.
+
+### Simplicité avant tout
+Code minimal qui résout le problème. Rien de spéculatif.
+
+- Aucune feature au-delà de ce qui est demandé.
+- Aucune abstraction pour du code à usage unique.
+- Aucune "flexibilité" ou "configurabilité" qui n'a pas été demandée.
+- Pas de gestion d'erreur pour des scénarios impossibles.
+- Si tu écris 200 lignes et que 50 suffisent, réécris.
+
+Se demander : "Un senior dirait-il que c'est trop compliqué ?" Si oui, simplifier.
+
+### Changements chirurgicaux
+Toucher uniquement ce qui doit l'être. Ne nettoyer que ce qu'on a soi-même sali.
+
+Lors d'une modification :
+- Ne pas "améliorer" le code adjacent, les commentaires ou le formatage.
+- Ne pas refactorer ce qui n'est pas cassé.
+- Respecter le style existant, même si on ferait autrement.
+- Si du code mort sans rapport est repéré, le mentionner — ne pas le supprimer.
+
+Quand les modifications créent des orphelins :
+- Supprimer les imports/variables/fonctions rendus inutiles par NOS changements.
+- Ne pas supprimer le code mort préexistant sauf si demandé explicitement.
+
+Le test : chaque ligne modifiée doit se tracer directement à la demande.
+
+### Exécution orientée objectif
+Définir des critères de succès. Itérer jusqu'à vérification.
+
+Transformer les tâches en objectifs vérifiables :
+- "Ajouter de la validation" → "Écrire des tests pour les inputs invalides, puis les faire passer"
+- "Corriger le bug" → "Écrire un test qui le reproduit, puis le faire passer"
+- "Refactorer X" → "S'assurer que les tests passent avant et après"
+
+Pour les tâches multi-étapes, énoncer un plan court :
+```
+1. [Étape] → vérifier : [contrôle]
+2. [Étape] → vérifier : [contrôle]
+```
+
+Des critères solides permettent d'itérer de façon autonome. Des critères vagues ("faire en sorte que ça marche") nécessitent des clarifications constantes.
+
 ### Taille des fichiers — règle stricte
 **Maximum 100 lignes** par fichier. Exceptions admises uniquement pour :
 - Repositories avec opérations en cascade complexes
