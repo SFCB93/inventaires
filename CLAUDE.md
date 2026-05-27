@@ -200,6 +200,42 @@ Middleware Next.js protège le route group `(backoffice)`.
 
 ---
 
+## Gestion du Git
+
+### Quand commiter et pousser
+
+**Commits autorisés librement** : corrections de bugs, fixes de build, ajustements CSS/UI mineurs.
+
+**Commit + push après validation explicite** : une feature complète (spec → design → dev → review → test) ne doit être commitée et poussée qu'après confirmation de l'utilisateur.
+
+Afficher à la fin du workflow :
+`✅ FEATURE VALIDÉE — Prêt à commiter et pousser. Confirme pour continuer.`
+
+Ne pas commiter ni pousser sans cette confirmation.
+
+### Convention des messages de commit
+
+Format : `type: description courte en français`
+
+| Type | Usage |
+|------|-------|
+| `feat` | Nouvelle feature |
+| `fix` | Correction de bug |
+| `chore` | Config, deps, outillage |
+| `test` | Ajout ou modification de tests |
+| `docs` | Documentation |
+| `refactor` | Refactoring sans changement de comportement |
+
+Un commit par feature ou sous-ensemble cohérent. Pas de commits fourre-tout.
+
+### Remote
+
+- Remote : `git@github.com:Gguigre/inventaires.git` (branche `main`)
+- Chaque push sur `main` déclenche un déploiement automatique sur Vercel.
+- Ne jamais pousser un code qui casse le build.
+
+---
+
 ## Amélioration continue des skills et agents
 
 Si, au cours d'une discussion ou d'une analyse de bug, il apparaît qu'un changement dans un fichier `CLAUDE.md`, `agents/*.md` ou `skills/*.md` aurait pu éviter le problème, proposer la modification et l'appliquer avec la permission explicite de l'utilisateur.
