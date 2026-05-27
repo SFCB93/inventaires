@@ -1,0 +1,30 @@
+import { cookies } from 'next/headers'
+import { adminAuth, adminDb } from '@/shared/data/firebase-admin'
+
+export type AuthenticatedUser = {
+  uid: string
+  associationId: string
+  role: 'admin' | 'superadmin'
+}
+
+export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')
+  if (!session) return null
+
+  try {
+    const decoded = await adminAuth.verifySessionCookie(session.value, true)
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get()
+    if (!userDoc.exists) return null
+    const data = userDoc.data()!
+    const role = (data.role as 'admin' | 'superadmin') ?? 'admin'
+    let associationId = (data.associationId as string) ?? ''
+    if (role === 'superadmin') {
+      const actingAs = cookieStore.get('acting-as')
+      associationId = actingAs?.value ?? ''
+    }
+    return { uid: decoded.uid, associationId, role }
+  } catch {
+    return null
+  }
+}
