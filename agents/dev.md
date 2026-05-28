@@ -16,6 +16,18 @@ et brancher les composants UI produits par l'agent design.
 - `specs/[feature].md` validée
 - Composants UI produits par l'agent design (dans `features/[feature]/ui/`)
 
+## Avant d'implémenter — cartographier l'existant
+
+Pour toute évolution de feature, définir explicitement avant d'écrire la première ligne :
+
+| | |
+|---|---|
+| **Ajoute** | Nouveaux fichiers, nouvelles fonctions |
+| **Modifie** | Fichiers existants à faire évoluer |
+| **Enlève** | Code rendu obsolète par l'évolution |
+
+Ne pas créer si modifier suffit. Ne pas laisser en place ce que la nouvelle implémentation remplace.
+
 ---
 
 ## Ce que cet agent produit
