@@ -46,6 +46,8 @@ export async function duplicateInventoryAction(inventoryId: string): Promise<Res
 export async function createCompartmentAction(inventoryId: string, name: string): Promise<Result<Compartment>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
+  const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
+  if (!owned.ok) return err('Accès non autorisé.')
   const result = await uc.createCompartmentUseCase(inventoryId, name)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
@@ -53,6 +55,8 @@ export async function createCompartmentAction(inventoryId: string, name: string)
 export async function updateCompartmentAction(inventoryId: string, compartmentId: string, name: string): Promise<Result<void>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
+  const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
+  if (!owned.ok) return err('Accès non autorisé.')
   const result = await uc.updateCompartmentUseCase(compartmentId, name)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
@@ -60,6 +64,8 @@ export async function updateCompartmentAction(inventoryId: string, compartmentId
 export async function deleteCompartmentAction(inventoryId: string, compartmentId: string): Promise<Result<void>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
+  const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
+  if (!owned.ok) return err('Accès non autorisé.')
   const result = await uc.deleteCompartmentUseCase(compartmentId)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
@@ -67,6 +73,8 @@ export async function deleteCompartmentAction(inventoryId: string, compartmentId
 export async function reorderCompartmentsAction(inventoryId: string, orderedIds: string[]): Promise<Result<void>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
+  const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
+  if (!owned.ok) return err('Accès non autorisé.')
   const result = await uc.reorderCompartmentsUseCase(inventoryId, orderedIds)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
@@ -74,6 +82,8 @@ export async function reorderCompartmentsAction(inventoryId: string, orderedIds:
 export async function createItemAction(inventoryId: string, data: { compartmentId: string; name: string; photoUrl: string; hasExpiry: boolean; isCritical: boolean }): Promise<Result<Item>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
+  const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
+  if (!owned.ok) return err('Accès non autorisé.')
   const result = await uc.createItemUseCase(data.compartmentId, { name: data.name, photoUrl: data.photoUrl, hasExpiry: data.hasExpiry, isCritical: data.isCritical })
   if (result.ok) revalidatePath(path(inventoryId))
   return result
@@ -81,6 +91,8 @@ export async function createItemAction(inventoryId: string, data: { compartmentI
 export async function updateItemAction(inventoryId: string, itemId: string, data: { name?: string; photoUrl?: string; hasExpiry?: boolean; isCritical?: boolean }): Promise<Result<void>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
+  const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
+  if (!owned.ok) return err('Accès non autorisé.')
   const result = await uc.updateItemUseCase(itemId, data)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
@@ -88,6 +100,8 @@ export async function updateItemAction(inventoryId: string, itemId: string, data
 export async function deleteItemAction(inventoryId: string, itemId: string): Promise<Result<void>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
+  const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
+  if (!owned.ok) return err('Accès non autorisé.')
   const result = await uc.deleteItemUseCase(itemId)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
@@ -95,6 +109,8 @@ export async function deleteItemAction(inventoryId: string, itemId: string): Pro
 export async function reorderItemsAction(inventoryId: string, compartmentId: string, orderedIds: string[]): Promise<Result<void>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
+  const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
+  if (!owned.ok) return err('Accès non autorisé.')
   const result = await uc.reorderItemsUseCase(compartmentId, orderedIds)
   if (result.ok) revalidatePath(path(inventoryId))
   return result

@@ -74,6 +74,17 @@ export async function getInventory(inventoryId: string, associationId: string): 
   }
 }
 
+export async function checkInventoryOwnership(inventoryId: string, associationId: string): Promise<Result<void>> {
+  try {
+    const doc = await adminDb.collection('inventaires').doc(inventoryId).get()
+    if (!doc.exists) return err("Inventaire introuvable.")
+    if (doc.data()!.associationId !== associationId) return err('Accès non autorisé.')
+    return ok(undefined)
+  } catch (error) {
+    return err(`Erreur de vérification. Erreur: ${(error as Error).message}`)
+  }
+}
+
 export async function createInventory(associationId: string, name: string): Promise<Result<Inventory>> {
   try {
     const ref = await adminDb.collection('inventaires').add({ name, associationId })

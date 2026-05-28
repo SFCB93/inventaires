@@ -53,6 +53,13 @@ export async function duplicateInventoryUseCase(
   return inventoryRepository.duplicateInventory(inventoryId, associationId)
 }
 
+export async function verifyInventoryOwnershipUseCase(
+  inventoryId: string,
+  associationId: string,
+): Promise<Result<void>> {
+  return inventoryRepository.checkInventoryOwnership(inventoryId, associationId)
+}
+
 export async function createCompartmentUseCase(
   inventoryId: string,
   name: string,
