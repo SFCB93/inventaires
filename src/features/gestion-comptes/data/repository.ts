@@ -1,7 +1,8 @@
+// Dépasse 120 lignes : opérations croisées Firebase Auth + Firestore pour la gestion des comptes.
 import { adminDb, adminAuth } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
-import type { AssociationSummary, AssociationSettings, CreateAssociationInput, UpdateAssociationInput } from '../domain/types'
+import type { AssociationSummary, AssociationSettings, CreateAssociationInput, UpdateAssociationInput, AdminAccount } from '../domain/types'
 
 export const gestionComptesRepository = {
   async listAssociations(): Promise<Result<AssociationSummary[]>> {
@@ -68,6 +69,61 @@ export const gestionComptesRepository = {
     } catch (error) {
       console.error('[updateAssociationSettings]', error)
       return err('Impossible de mettre à jour les paramètres.')
+    }
+  },
+
+  async listAdminAccounts(associationId: string): Promise<Result<AdminAccount[]>> {
+    try {
+      const snap = await adminDb.collection('users').where('associationId', '==', associationId).where('role', '==', 'admin').get()
+      if (snap.empty) return ok([])
+      const { users } = await adminAuth.getUsers(snap.docs.map((d) => ({ uid: d.id })))
+      const accounts = users.map((u) => ({
+        uid: u.uid,
+        email: u.email ?? '',
+        createdAt: u.metadata.creationTime ? new Date(u.metadata.creationTime) : null,
+      }))
+      accounts.sort((a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0))
+      return ok(accounts)
+    } catch (error) {
+      console.error('[listAdminAccounts]', error)
+      return err(`Impossible de charger les comptes. Erreur: ${(error as Error).message}`)
+    }
+  },
+
+  async createAdminAccount(email: string, associationId: string): Promise<Result<{ uid: string; resetLink: string }>> {
+    let uid: string | undefined
+    try {
+      const authUser = await adminAuth.createUser({ email })
+      uid = authUser.uid
+      await adminDb.collection('users').doc(uid).set({ associationId, role: 'admin' })
+      const resetLink = await adminAuth.generatePasswordResetLink(email)
+      return ok({ uid, resetLink })
+    } catch (error) {
+      const code = (error as { code?: string }).code
+      if (code === 'auth/email-already-exists') return err('Un compte existe déjà avec cet email.')
+      if (uid) console.error(`[createAdminAccount] Compte Auth créé (${uid}) mais échec Firestore`)
+      return err(`Impossible de créer le compte. Erreur: ${(error as Error).message}`)
+    }
+  },
+
+  async removeAdminAccount(uid: string): Promise<Result<void>> {
+    try {
+      await adminAuth.deleteUser(uid)
+      await adminDb.collection('users').doc(uid).delete()
+      return ok(undefined)
+    } catch (error) {
+      return err(`Impossible de supprimer le compte. Erreur: ${(error as Error).message}`)
+    }
+  },
+
+  async generatePasswordReset(uid: string): Promise<Result<{ email: string; resetLink: string }>> {
+    try {
+      const authUser = await adminAuth.getUser(uid)
+      if (!authUser.email) return err('Aucun email associé à ce compte.')
+      const resetLink = await adminAuth.generatePasswordResetLink(authUser.email)
+      return ok({ email: authUser.email, resetLink })
+    } catch (error) {
+      return err(`Impossible de générer le lien. Erreur: ${(error as Error).message}`)
     }
   },
 }

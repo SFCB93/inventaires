@@ -18,3 +18,9 @@ export type UpdateAssociationInput = {
   name: string
   notificationEmails: string[]
 }
+
+export type AdminAccount = {
+  uid: string
+  email: string
+  createdAt: Date | null
+}

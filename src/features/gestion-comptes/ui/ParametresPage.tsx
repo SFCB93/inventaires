@@ -1,14 +1,17 @@
 'use client'
 
-import type { AssociationSettings } from '../domain/types'
+import type { AssociationSettings, AdminAccount } from '../domain/types'
 import { useParametresPage } from './hooks/useParametresPage'
 import { NotificationEmailsEditor } from './NotificationEmailsEditor'
+import { AdminAccountsSection } from './AdminAccountsSection'
 
 interface ParametresPageProps {
   settings: AssociationSettings
+  adminAccounts: AdminAccount[]
+  currentUserUid: string
 }
 
-export function ParametresPage({ settings }: ParametresPageProps) {
+export function ParametresPage({ settings, adminAccounts, currentUserUid }: ParametresPageProps) {
   const {
     name, setName,
     emails, newEmail, setNewEmail, emailError, addEmail, removeEmail,
@@ -48,6 +51,8 @@ export function ParametresPage({ settings }: ParametresPageProps) {
           onRemove={removeEmail}
         />
       </section>
+
+      <AdminAccountsSection initialAccounts={adminAccounts} currentUserUid={currentUserUid} />
 
       {error && (
         <p role="alert" className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>

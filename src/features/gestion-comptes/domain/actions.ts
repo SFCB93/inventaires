@@ -4,7 +4,8 @@ import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getAuthenticatedUser } from '@/shared/lib/auth'
-import { createAssociationUseCase, updateAssociationSettingsUseCase } from './use-cases'
+import { createAssociationUseCase, updateAssociationSettingsUseCase, inviteAdminUseCase, removeAdminUseCase, sendPasswordResetUseCase } from './use-cases'
+import type { Result } from '@/shared/domain/result'
 
 const ACTING_AS_COOKIE = 'acting-as'
 const SESSION_DURATION_S = 60 * 60 * 24 * 5
@@ -47,4 +48,26 @@ export async function updateAssociationSettingsAction(data: { name: string; noti
   if (!result.ok) return { error: result.error }
   revalidatePath('/dashboard/parametres')
   return { ok: true }
+}
+
+export async function inviteAdminAction(email: string): Promise<Result<void>> {
+  const user = await getAuthenticatedUser()
+  if (!user) return { ok: false, error: 'Non authentifié.' }
+  const result = await inviteAdminUseCase(email, user)
+  if (result.ok) revalidatePath('/dashboard/parametres')
+  return result
+}
+
+export async function removeAdminAction(targetUid: string): Promise<Result<void>> {
+  const user = await getAuthenticatedUser()
+  if (!user) return { ok: false, error: 'Non authentifié.' }
+  const result = await removeAdminUseCase(targetUid, user)
+  if (result.ok) revalidatePath('/dashboard/parametres')
+  return result
+}
+
+export async function sendPasswordResetAction(): Promise<Result<void>> {
+  const user = await getAuthenticatedUser()
+  if (!user) return { ok: false, error: 'Non authentifié.' }
+  return sendPasswordResetUseCase(user)
 }
