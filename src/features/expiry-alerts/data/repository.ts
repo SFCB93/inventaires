@@ -7,6 +7,7 @@ export type AssociationAlertConfig = {
   id: string
   name: string
   notificationEmails: string[]
+  alertThresholdDays: number
   alertIntervalDays: number
 }
 
@@ -25,6 +26,7 @@ export const expiryAlertsRepository = {
           id: doc.id,
           name: (d.name as string) ?? '',
           notificationEmails: (d.notificationEmails as string[]) ?? [],
+          alertThresholdDays: (d.alertThresholdDays as number | undefined) ?? 30,
           alertIntervalDays: (d.alertIntervalDays as number | undefined) ?? 7,
         }
       }))

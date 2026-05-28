@@ -14,9 +14,9 @@ export async function getControlDetailUseCase(controlId: string, associationId: 
   return controlesRepository.getControlDetail(controlId, associationId)
 }
 
-export async function getActiveExpiryAlertsUseCase(associationId: string): Promise<Result<ExpiryAlertReport>> {
+export async function getActiveExpiryAlertsUseCase(associationId: string, thresholdDays?: number): Promise<Result<ExpiryAlertReport>> {
   if (!associationId) return err('Association non identifiée.')
-  return controlesRepository.getActiveExpiryAlerts(associationId)
+  return controlesRepository.getActiveExpiryAlerts(associationId, thresholdDays)
 }
 
 export async function createCorrectionUseCase(

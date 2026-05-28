@@ -137,11 +137,11 @@ export const controlesRepository = {
     }
   },
 
-  async getActiveExpiryAlerts(associationId: string): Promise<Result<ExpiryAlertReport>> {
+  async getActiveExpiryAlerts(associationId: string, providedThreshold?: number): Promise<Result<ExpiryAlertReport>> {
     try {
       const [inventoriesSnap, thresholdDays] = await Promise.all([
         adminDb.collection('inventaires').where('associationId', '==', associationId).get(),
-        getAlertThreshold(associationId),
+        providedThreshold !== undefined ? Promise.resolve(providedThreshold) : getAlertThreshold(associationId),
       ])
       if (inventoriesSnap.empty) return ok({ expired: [], atRisk: [] })
       const inventoryIds = inventoriesSnap.docs.map(d => d.id)

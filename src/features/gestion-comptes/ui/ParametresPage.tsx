@@ -69,6 +69,7 @@ export function ParametresPage({ settings, adminAccounts, currentUserUid }: Para
               min="1"
               value={alertThresholdDays}
               onChange={(e) => setAlertThresholdDays(Math.max(1, parseInt(e.target.value) || 1))}
+              data-testid="input-alert-threshold"
               className="w-32 h-10 rounded-lg border-2 border-slate-200 px-3 text-sm
                          focus:outline-none focus:border-blue-500 transition-colors"
             />
@@ -83,6 +84,7 @@ export function ParametresPage({ settings, adminAccounts, currentUserUid }: Para
               min="1"
               value={alertIntervalDays}
               onChange={(e) => setAlertIntervalDays(Math.max(1, parseInt(e.target.value) || 1))}
+              data-testid="input-alert-interval"
               className="w-32 h-10 rounded-lg border-2 border-slate-200 px-3 text-sm
                          focus:outline-none focus:border-blue-500 transition-colors"
             />

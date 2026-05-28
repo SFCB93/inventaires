@@ -2,7 +2,7 @@ import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
 import { expiryAlertsRepository } from '../data/repository'
 import { getActiveExpiryAlertsUseCase } from '@/features/controles/domain/use-cases'
-import { sendExpiryAlertEmail } from '@/features/controles/domain/email-service'
+import { sendExpiryAlertEmail } from './email-service'
 import type { CronReport } from './types'
 
 export async function runExpiryAlertsCronUseCase(): Promise<Result<CronReport>> {
@@ -17,7 +17,7 @@ export async function runExpiryAlertsCronUseCase(): Promise<Result<CronReport>> 
       try {
         if (assoc.notificationEmails.length === 0) continue
 
-        const alertsResult = await getActiveExpiryAlertsUseCase(assoc.id)
+        const alertsResult = await getActiveExpiryAlertsUseCase(assoc.id, assoc.alertThresholdDays)
         if (!alertsResult.ok) { errors.push(`${assoc.name}: ${alertsResult.error}`); continue }
 
         const { expired, atRisk } = alertsResult.value
