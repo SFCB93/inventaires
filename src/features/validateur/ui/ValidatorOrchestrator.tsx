@@ -36,7 +36,7 @@ export function ValidatorOrchestrator({ inventory, compartments }: ValidatorOrch
 
   if (step === 'item' && currentItem) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-dvh">
         <ProgressBar
           currentItem={results.length + 1}
           totalItems={totalItems}

@@ -5,7 +5,7 @@ interface ConfirmationScreenProps {
 
 export function ConfirmationScreen({ inventoryName, submittedAt }: ConfirmationScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 text-center bg-white">
+    <div className="flex flex-col items-center justify-center min-h-dvh px-6 py-12 text-center bg-white">
       <div
         className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-8"
         aria-hidden="true"

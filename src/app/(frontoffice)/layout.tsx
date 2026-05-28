@@ -4,8 +4,8 @@ export default function FrontofficeLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="mx-auto max-w-lg min-h-screen bg-white shadow-sm">
+    <div className="min-h-dvh bg-gray-100">
+      <main className="mx-auto max-w-lg min-h-dvh bg-white shadow-sm">
         {children}
       </main>
     </div>

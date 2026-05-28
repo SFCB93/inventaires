@@ -23,7 +23,7 @@ export function SummaryScreen({ compartments, results, onSubmit, isSubmitting, e
   const anomalyCount = results.filter((r) => r.status === 'anomaly').length
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-dvh bg-white">
       <div className="bg-slate-800 px-5 pt-12 pb-6 text-white">
         <h2 className="text-2xl font-bold">Récapitulatif</h2>
         <div className="flex items-center gap-3 mt-2">

@@ -14,7 +14,7 @@ export function WelcomeScreen({
   onStart,
 }: WelcomeScreenProps) {
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-dvh bg-white">
       <div className="bg-blue-600 px-6 pt-16 pb-12 text-white">
         <p className="text-blue-200 text-sm font-medium uppercase tracking-widest mb-2">
           Contrôle d'inventaire
