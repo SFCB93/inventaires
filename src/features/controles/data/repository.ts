@@ -1,6 +1,7 @@
 // Dépasse 100 lignes : agrège contrôles, corrections, matériels et emplacements pour 4 use cases distincts.
 import { FieldPath, FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/shared/data/firebase-admin'
+import { chunkArray } from '@/shared/lib/array'
 import type { Result } from '@/shared/domain/result'
 import { ok, err } from '@/shared/domain/result'
 import type {
@@ -23,8 +24,7 @@ function todayPlusDays(n: number): Date {
 async function batchGetNames(collectionName: string, ids: string[]): Promise<Map<string, string>> {
   const result = new Map<string, string>()
   if (ids.length === 0) return result
-  for (let i = 0; i < ids.length; i += 30) {
-    const chunk = ids.slice(i, i + 30)
+  for (const chunk of chunkArray(ids, 30)) {
     const snap = await adminDb.collection(collectionName).where(FieldPath.documentId(), 'in', chunk).get()
     for (const doc of snap.docs) result.set(doc.id, doc.data().name ?? '')
   }
@@ -38,8 +38,7 @@ export const controlesRepository = {
       if (inventoriesSnap.empty) return ok([])
       const inventoryIds = inventoriesSnap.docs.map(d => d.id)
       const controlDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
-      for (let i = 0; i < inventoryIds.length; i += 30) {
-        const chunk = inventoryIds.slice(i, i + 30)
+      for (const chunk of chunkArray(inventoryIds, 30)) {
         const snap = await adminDb.collection('controles').where('inventoryId', 'in', chunk).get()
         controlDocs.push(...snap.docs)
       }
@@ -131,8 +130,7 @@ export const controlesRepository = {
       type Entry = { itemId: string; inventoryId: string; inventoryName: string; compartmentId: string; latestExpiryDate: string; recordedAtMs: number; source: 'control' | 'correction' }
       const entries = new Map<string, Entry>()
       const allControlDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
-      for (let i = 0; i < inventoryIds.length; i += 30) {
-        const chunk = inventoryIds.slice(i, i + 30)
+      for (const chunk of chunkArray(inventoryIds, 30)) {
         const snap = await adminDb.collection('controles').where('inventoryId', 'in', chunk).get()
         allControlDocs.push(...snap.docs)
       }

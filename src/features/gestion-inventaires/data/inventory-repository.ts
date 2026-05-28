@@ -2,6 +2,7 @@
 import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
+import { chunkArray } from '@/shared/lib/array'
 import type { Inventory, InventoryWithCompartmentCount, InventoryWithCompartments, CompartmentWithItems, Item } from '../domain/types'
 
 export async function listInventories(associationId: string): Promise<Result<InventoryWithCompartmentCount[]>> {
@@ -10,8 +11,7 @@ export async function listInventories(associationId: string): Promise<Result<Inv
     if (snap.empty) return ok([])
     const ids = snap.docs.map((d) => d.id)
     const countMap = new Map<string, number>()
-    for (let i = 0; i < ids.length; i += 30) {
-      const chunk = ids.slice(i, i + 30)
+    for (const chunk of chunkArray(ids, 30)) {
       const compSnap = await adminDb.collection('emplacements').where('inventoryId', 'in', chunk).get()
       for (const doc of compSnap.docs) {
         const invId = doc.data().inventoryId as string
@@ -45,8 +45,7 @@ export async function getInventory(inventoryId: string, associationId: string): 
     const itemsByCompartment = new Map<string, Item[]>()
 
     if (compartmentIds.length > 0) {
-      for (let i = 0; i < compartmentIds.length; i += 30) {
-        const chunk = compartmentIds.slice(i, i + 30)
+      for (const chunk of chunkArray(compartmentIds, 30)) {
         const itemsSnap = await adminDb.collection('materiels').where('compartmentId', 'in', chunk).get()
         for (const doc of itemsSnap.docs) {
           const data = doc.data()
@@ -115,8 +114,7 @@ export async function deleteInventory(inventoryId: string, associationId: string
     const compartmentIds = compartmentsSnap.docs.map((d) => d.id)
     const itemIds: string[] = []
 
-    for (let i = 0; i < compartmentIds.length; i += 30) {
-      const chunk = compartmentIds.slice(i, i + 30)
+    for (const chunk of chunkArray(compartmentIds, 30)) {
       const itemsSnap = await adminDb.collection('materiels').where('compartmentId', 'in', chunk).get()
       itemIds.push(...itemsSnap.docs.map((d) => d.id))
     }
@@ -126,9 +124,9 @@ export async function deleteInventory(inventoryId: string, associationId: string
       ...compartmentsSnap.docs.map((d) => adminDb.collection('emplacements').doc(d.id)),
       adminDb.collection('inventaires').doc(inventoryId),
     ]
-    for (let i = 0; i < allRefs.length; i += 490) {
+    for (const chunk of chunkArray(allRefs, 490)) {
       const batch = adminDb.batch()
-      allRefs.slice(i, i + 490).forEach((ref) => batch.delete(ref))
+      chunk.forEach((ref) => batch.delete(ref))
       await batch.commit()
     }
     return ok(undefined)
@@ -149,17 +147,29 @@ export async function duplicateInventory(inventoryId: string, associationId: str
     const empSnap = await adminDb.collection('emplacements').where('inventoryId', '==', inventoryId).orderBy('order').get()
     if (empSnap.empty) return ok({ id: newInvRef.id, name: newName, associationId })
 
+    const empIds = empSnap.docs.map((d) => d.id)
+    const allMatDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
+    for (const chunk of chunkArray(empIds, 30)) {
+      const snap = await adminDb.collection('materiels').where('compartmentId', 'in', chunk).get()
+      allMatDocs.push(...snap.docs)
+    }
+    const matsByEmp = new Map<string, FirebaseFirestore.DocumentData[]>()
+    for (const doc of allMatDocs) {
+      const cid = doc.data().compartmentId as string
+      const list = matsByEmp.get(cid) ?? []
+      list.push(doc.data())
+      matsByEmp.set(cid, list)
+    }
+
     for (const empDoc of empSnap.docs) {
       const empData = empDoc.data()
       const newEmpRef = await adminDb.collection('emplacements').add({
         name: empData.name, order: empData.order, inventoryId: newInvRef.id,
       })
-      const matSnap = await adminDb.collection('materiels').where('compartmentId', '==', empDoc.id).get()
-      if (matSnap.empty) continue
-      for (let i = 0; i < matSnap.docs.length; i += 490) {
+      const mats = matsByEmp.get(empDoc.id) ?? []
+      for (const chunk of chunkArray(mats, 490)) {
         const batch = adminDb.batch()
-        matSnap.docs.slice(i, i + 490).forEach((matDoc) => {
-          const d = matDoc.data()
+        chunk.forEach((d) => {
           batch.set(adminDb.collection('materiels').doc(), {
             name: d.name, photoUrl: d.photoUrl ?? '', hasExpiry: d.hasExpiry ?? false,
             isCritical: d.isCritical ?? false, order: d.order ?? 0, compartmentId: newEmpRef.id,

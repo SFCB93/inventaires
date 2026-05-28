@@ -1,5 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/shared/data/firebase-admin";
+import { chunkArray } from "@/shared/lib/array";
 import type { Result } from "@/shared/domain/result";
 import { ok, err } from "@/shared/domain/result";
 import type {
@@ -49,12 +50,8 @@ export const validatorRepository = {
 
       // Firestore 'in' supports up to 30 values; batch queries for larger inventories
       const itemDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
-      for (let i = 0; i < compartmentIds.length; i += 30) {
-        const chunk = compartmentIds.slice(i, i + 30)
-        const snap = await adminDb
-          .collection("materiels")
-          .where("compartmentId", "in", chunk)
-          .get()
+      for (const chunk of chunkArray(compartmentIds, 30)) {
+        const snap = await adminDb.collection("materiels").where("compartmentId", "in", chunk).get()
         itemDocs.push(...snap.docs)
       }
       const itemsSnap = { docs: itemDocs }

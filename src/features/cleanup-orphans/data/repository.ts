@@ -1,6 +1,7 @@
 import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
+import { chunkArray } from '@/shared/lib/array'
 import type { CleanupReport } from '../domain/types'
 
 async function deleteOrphans(
@@ -14,9 +15,9 @@ async function deleteOrphans(
       .filter((d) => !validParentIds.has(d.data()[foreignKey] as string))
       .map((d) => adminDb.collection(collectionName).doc(d.id))
 
-    for (let i = 0; i < orphanRefs.length; i += 490) {
+    for (const chunk of chunkArray(orphanRefs, 490)) {
       const batch = adminDb.batch()
-      orphanRefs.slice(i, i + 490).forEach((ref) => batch.delete(ref))
+      chunk.forEach((ref) => batch.delete(ref))
       await batch.commit()
     }
 
