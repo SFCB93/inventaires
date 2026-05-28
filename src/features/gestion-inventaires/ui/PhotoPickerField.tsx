@@ -3,21 +3,15 @@
 import Image from 'next/image'
 
 export interface PhotoPickerFieldProps {
-  photoMode: 'file' | 'url'
-  urlInput: string
-  urlError: boolean
   previewUrl: string | null
   isResizing: boolean
   fileInputRef: React.RefObject<HTMLInputElement | null>
-  onPhotoModeChange: (mode: 'file' | 'url') => void
-  onPhotoUrlChange: (url: string) => void
   handlePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>
   handleRemovePhoto: () => void
 }
 
 export function PhotoPickerField({
-  photoMode, urlInput, urlError, previewUrl, isResizing,
-  fileInputRef, onPhotoModeChange, onPhotoUrlChange, handlePhotoChange, handleRemovePhoto,
+  previewUrl, isResizing, fileInputRef, handlePhotoChange, handleRemovePhoto,
 }: PhotoPickerFieldProps) {
   return (
     <div className="flex items-start gap-3">
@@ -29,32 +23,12 @@ export function PhotoPickerField({
             </svg>}
       </div>
       <div className="flex-1 flex flex-col gap-1.5">
-        {photoMode === 'url' ? (
-          <>
-            <input data-testid="input-photo-url" type="url" value={urlInput}
-              onChange={(e) => onPhotoUrlChange(e.target.value)}
-              placeholder="https://example.com/photo.jpg" aria-label="URL de la photo"
-              className={`w-full h-9 rounded-lg border-2 px-3 text-sm focus:outline-none focus:border-blue-500 transition-colors ${urlError ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
-            />
-            {urlError && <p role="alert" className="text-xs text-red-600">L'URL doit commencer par https://</p>}
-            <button type="button" data-testid="btn-switch-to-file" onClick={() => onPhotoModeChange('file')}
-              className="text-xs text-slate-400 hover:text-slate-600 text-left transition-colors">
-              ← Choisir un fichier à la place
-            </button>
-          </>
-        ) : (
-          <>
-            <button type="button" data-testid="btn-upload-photo" disabled={isResizing}
-              onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 text-left">
-              {isResizing ? 'Chargement…' : previewUrl ? 'Changer la photo' : 'Choisir une photo'}
-            </button>
-            <button type="button" data-testid="btn-switch-to-url" onClick={() => onPhotoModeChange('url')}
-              className="text-xs text-slate-400 hover:text-slate-600 text-left transition-colors">
-              ou entrer une URL
-            </button>
-          </>
-        )}
+        <button type="button" data-testid="btn-upload-photo" disabled={isResizing}
+          onClick={() => fileInputRef.current?.click()}
+          className="px-3 py-1.5 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 text-left">
+          {isResizing ? 'Chargement…' : previewUrl ? 'Changer la photo' : 'Choisir une photo'}
+        </button>
+        <span className="text-xs text-slate-400">ou coller (Ctrl+V / ⌘V)</span>
         {previewUrl && (
           <button type="button" data-testid="btn-remove-photo" onClick={handleRemovePhoto}
             className="text-xs text-red-500 hover:text-red-700 text-left">

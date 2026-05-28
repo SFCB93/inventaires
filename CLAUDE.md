@@ -161,11 +161,11 @@ Pour les tâches multi-étapes, énoncer un plan court :
 Des critères solides permettent d'itérer de façon autonome. Des critères vagues ("faire en sorte que ça marche") nécessitent des clarifications constantes.
 
 ### Taille des fichiers — règle stricte
-**Maximum 100 lignes** par fichier. Exceptions admises uniquement pour :
+**Viser 100 lignes** par fichier, **maximum toléré 120**. Exceptions admises au-delà uniquement pour :
 - Repositories avec opérations en cascade complexes
 - Fichiers de tests (suites de tests longues)
 
-Pour les dépasser, documenter pourquoi dans un commentaire en tête de fichier.
+Pour dépasser 120 lignes, documenter pourquoi dans un commentaire en tête de fichier.
 
 ### Hooks React — règle stricte
 Les hooks personnalisés sont **toujours dans leur propre fichier** `ui/hooks/useXxx.ts`.
@@ -179,7 +179,7 @@ features/[feature]/ui/
   Xxx.tsx           ← import hook + JSX uniquement
 ```
 
-Exception : état local trivial (`isOpen`, `isHovered`) peut rester dans le composant si le fichier reste sous 100 lignes.
+Exception : état local trivial (`isOpen`, `isHovered`) peut rester dans le composant si le fichier reste sous 120 lignes.
 
 ### Nommage — règle absolue
 Tout le code est en **anglais** : noms de types, interfaces, variables, fonctions, composants,
