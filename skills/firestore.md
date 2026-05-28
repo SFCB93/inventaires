@@ -1,29 +1,10 @@
 # Skill — Firestore
 
-## Initialisation Firebase
+## SDK utilisé : Firebase Admin uniquement
 
-```ts
-// shared/data/firebase.ts
-import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth'
+Tous les accès Firestore se font côté serveur (Server Actions, Server Components,
+API routes) via le SDK Admin. Il n'y a **pas** de client Firestore dans ce projet.
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-
-export const db = getFirestore(app)
-export const auth = getAuth(app)
-```
-
-**Firebase Admin** (Server Actions, API routes) :
 ```ts
 // shared/data/firebase-admin.ts
 import { initializeApp, getApps, cert } from 'firebase-admin/app'
@@ -42,121 +23,100 @@ if (!getApps().length) {
 export const adminDb = getFirestore()
 ```
 
+Ne jamais exposer `adminDb` côté client. Ne jamais importer `firebase-admin`
+dans un composant `'use client'`.
+
 ---
 
 ## Structure des collections
 
 ```
-sacs/
-  {sacId}/
-    nom: string
-    description: string
-    createdAt: Timestamp
-    updatedAt: Timestamp
-
-materiels/
-  {materielId}/
-    sacId: string
-    nom: string
-    photo: string          # URL
-    emplacement: string
-    critique: boolean      # péremption obligatoire si true
-    peremeAt: Timestamp | null
-    ordre: number          # ordre d'affichage dans le sac
+associations/
+  {assocId}/
+    name: string
+    notificationEmails: string[]
 
 inventaires/
   {inventaireId}/
-    sacId: string
-    secouristeNom: string
-    startedAt: Timestamp
-    completedAt: Timestamp | null
-    statut: 'en_cours' | 'termine'
+    associationId: string
+    name: string
 
-    verifications/         # sous-collection
-      {verificationId}/
-        materielId: string
-        statut: 'present' | 'anomalie'
-        commentaire: string | null
-        peremeAt: Timestamp | null
-        verifiedAt: Timestamp
+emplacements/
+  {emplacementId}/
+    inventoryId: string
+    name: string
+    order: number
+
+materiels/
+  {materielId}/
+    compartmentId: string
+    name: string
+    photoUrl: string
+    hasExpiry: boolean
+    isCritical: boolean
+    order: number
+
+controles/
+  {controleId}/
+    associationId: string
+    inventoryId: string
+    inventoryName: string
+    verifierName: string
+    submittedAt: Timestamp
+    results: Array<{
+      itemId: string
+      compartmentId: string
+      status: 'ok' | 'anomaly'
+      comment: string | null
+      expiryDate: string | null    # format ISO 'YYYY-MM-DD'
+    }>
+
+corrections/
+  {correctionId}/
+    associationId: string
+    inventoryId: string
+    itemId: string
+    expiryDate: string             # format ISO 'YYYY-MM-DD'
+    correctedAt: Timestamp
 ```
 
 ---
 
 ## Pattern Repository
 
-Chaque feature a son propre repository. Le repository est la **seule**
-couche qui connaît Firestore.
+Chaque feature a son propre repository dans `features/[feature]/data/repository.ts`.
+Le repository est la **seule** couche qui connaît `adminDb`.
 
 ```ts
-// features/sacs/data/repository.ts
-import { db } from '@/shared/data/firebase'
-import {
-  collection, doc, getDocs, getDoc,
-  addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, Timestamp
-} from 'firebase/firestore'
-import type { Sac, CreateSacDto } from '../domain/types'
+// features/[feature]/data/repository.ts
+import { FieldValue } from 'firebase-admin/firestore'
+import { adminDb } from '@/shared/data/firebase-admin'
 import type { Result } from '@/shared/domain/result'
+import { ok, err } from '@/shared/domain/result'
 
-const COLLECTION = 'sacs'
-
-export const sacsRepository = {
-  async getAll(): Promise<Result<Sac[]>> {
+export const myRepository = {
+  async getAll(associationId: string): Promise<Result<Item[]>> {
     try {
-      const snapshot = await getDocs(collection(db, COLLECTION))
-      const sacs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Sac[]
-      return { ok: true, value: sacs }
-    } catch (e) {
-      return { ok: false, error: 'Impossible de récupérer les sacs' }
+      const snap = await adminDb
+        .collection('items')
+        .where('associationId', '==', associationId)
+        .orderBy('order')
+        .get()
+      return ok(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Item)))
+    } catch (error) {
+      return err(`Impossible de charger les éléments : ${(error as Error).message}`)
     }
   },
 
-  async getById(id: string): Promise<Result<Sac>> {
+  async create(data: CreateItemDto): Promise<Result<void>> {
     try {
-      const snap = await getDoc(doc(db, COLLECTION, id))
-      if (!snap.exists()) return { ok: false, error: 'Sac introuvable' }
-      return { ok: true, value: { id: snap.id, ...snap.data() } as Sac }
-    } catch (e) {
-      return { ok: false, error: 'Erreur lors de la récupération du sac' }
-    }
-  },
-
-  async create(data: CreateSacDto): Promise<Result<Sac>> {
-    try {
-      const now = Timestamp.now()
-      const ref = await addDoc(collection(db, COLLECTION), {
+      await adminDb.collection('items').add({
         ...data,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: FieldValue.serverTimestamp(),
       })
-      return { ok: true, value: { id: ref.id, ...data, createdAt: now, updatedAt: now } }
-    } catch (e) {
-      return { ok: false, error: 'Impossible de créer le sac' }
-    }
-  },
-
-  async update(id: string, data: Partial<CreateSacDto>): Promise<Result<void>> {
-    try {
-      await updateDoc(doc(db, COLLECTION, id), {
-        ...data,
-        updatedAt: Timestamp.now(),
-      })
-      return { ok: true, value: undefined }
-    } catch (e) {
-      return { ok: false, error: 'Impossible de mettre à jour le sac' }
-    }
-  },
-
-  async delete(id: string): Promise<Result<void>> {
-    try {
-      await deleteDoc(doc(db, COLLECTION, id))
-      return { ok: true, value: undefined }
-    } catch (e) {
-      return { ok: false, error: 'Impossible de supprimer le sac' }
+      return ok(undefined)
+    } catch (error) {
+      return err(`Impossible de créer l'élément : ${(error as Error).message}`)
     }
   },
 }
@@ -164,76 +124,71 @@ export const sacsRepository = {
 
 ---
 
-## Listeners temps réel
+## Batching — limites Firestore
 
-Uniquement dans les cas où le temps réel est justifié (ex : backoffice
-qui suit les inventaires en cours). Utiliser `onSnapshot` dans un hook client :
+Firestore impose deux limites importantes :
+
+| Opération | Limite | Helper |
+|-----------|--------|--------|
+| Requête `in` / `not-in` | 30 valeurs max | `chunkArray(ids, 30)` |
+| Batch write | 500 opérations max | `chunkArray(refs, 490)` |
+
+Toujours utiliser `chunkArray` de `@/shared/lib/array` :
 
 ```ts
-// features/inventaires/ui/use-inventaires-live.ts
-'use client'
-import { useEffect, useState } from 'react'
-import { collection, onSnapshot, query, where } from 'firebase/firestore'
-import { db } from '@/shared/data/firebase'
+import { chunkArray } from '@/shared/lib/array'
 
-export function useInventairesLive(sacId: string) {
-  const [inventaires, setInventaires] = useState([])
+// Requêtes 'in' par lots de 30
+const allDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
+for (const chunk of chunkArray(ids, 30)) {
+  const snap = await adminDb.collection('items').where('compartmentId', 'in', chunk).get()
+  allDocs.push(...snap.docs)
+}
 
-  useEffect(() => {
-    const q = query(
-      collection(db, 'inventaires'),
-      where('sacId', '==', sacId)
-    )
-    const unsub = onSnapshot(q, snap => {
-      setInventaires(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
-    return unsub
-  }, [sacId])
-
-  return inventaires
+// Batch writes par lots de 490
+for (const chunk of chunkArray(refs, 490)) {
+  const batch = adminDb.batch()
+  chunk.forEach((ref) => batch.delete(ref))
+  await batch.commit()
 }
 ```
 
-Ne pas utiliser `onSnapshot` dans les Server Components.
-
 ---
 
-## Règles de sécurité Firestore
+## Vérification d'appartenance (ownership)
 
-Toujours définir des règles explicites dans `firestore.rules` :
+Avant toute mutation (update, delete), vérifier que la ressource appartient
+à l'association de l'utilisateur connecté.
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Backoffice — authentifié uniquement
-    match /sacs/{sacId} {
-      allow read, write: if request.auth != null;
-    }
-    match /materiels/{materielId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Inventaires — lecture publique (frontoffice), écriture publique (submission)
-    match /inventaires/{inventaireId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if true;  // affiner selon les besoins
-      match /verifications/{vId} {
-        allow read, write: if true;
-      }
-    }
+```ts
+// Dans le repository
+async checkOwnership(inventoryId: string, associationId: string): Promise<Result<void>> {
+  try {
+    const doc = await adminDb.collection('inventaires').doc(inventoryId).get()
+    if (!doc.exists) return err('Inventaire introuvable.')
+    if (doc.data()!.associationId !== associationId) return err('Accès non autorisé.')
+    return ok(undefined)
+  } catch (error) {
+    return err(`Erreur lors de la vérification : ${(error as Error).message}`)
   }
 }
+
+// Dans la Server Action, avant la mutation
+const owned = await inventoryRepository.checkOwnership(inventoryId, user.associationId)
+if (!owned.ok) return owned
 ```
+
+Ne jamais omettre cette vérification pour les mutations, même si la route est
+protégée par le middleware d'auth.
 
 ---
 
 ## Ce qu'il ne faut pas faire
 
-- ❌ Importer `db` directement dans un use case ou un composant UI
-- ❌ Faire des requêtes Firestore côté client sans listener (préférer Server Components)
+- ❌ Importer `firebase-admin` ou `adminDb` dans un composant `'use client'`
+- ❌ Utiliser le client SDK Firebase (`firebase/firestore`) — ce projet utilise Admin uniquement
+- ❌ Oublier le try/catch — toujours retourner `Result<T>`
+- ❌ Faire des requêtes `in` avec plus de 30 valeurs sans `chunkArray`
+- ❌ Faire des batch writes avec plus de 490 opérations sans `chunkArray`
+- ❌ Muter une ressource sans vérifier l'appartenance à l'association
 - ❌ Stocker des données sensibles (clés, mots de passe) dans Firestore
-- ❌ Oublier le `try/catch` dans les repositories — toujours retourner Result<T>
-- ❌ Utiliser `adminDb` côté client (firebase-admin est Node.js uniquement)

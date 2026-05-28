@@ -54,23 +54,22 @@ Ne pas créer de route API REST pour ça.
 // features/sacs/domain/actions.ts
 'use server'
 
+import { ok } from '@/shared/domain/result'
+import type { Result } from '@/shared/domain/result'
 import { createSacUseCase } from './use-cases'
 import { revalidatePath } from 'next/cache'
 
-export async function createSacAction(formData: FormData) {
+export async function createSacAction(formData: FormData): Promise<Result<void>> {
   const nom = formData.get('nom') as string
   const result = await createSacUseCase({ nom })
-
-  if (!result.ok) {
-    return { error: result.error }
-  }
-
+  if (!result.ok) return result
   revalidatePath('/dashboard/sacs')
-  return { success: true }
+  return ok(undefined)
 }
 ```
 
-Les Server Actions retournent un objet sérialisable, jamais de throw.
+Les Server Actions retournent `Result<T>`, jamais de throw.
+Ne jamais retourner `{ error } | { success }` ou exposer des IDs internes.
 
 ---
 
@@ -123,15 +122,11 @@ Wrapper les providers Firebase et Zustand dans un composant client dédié :
 'use client'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <FirebaseProvider>
-      {children}
-    </FirebaseProvider>
-  )
+  return <>{children}</>
 }
 ```
 
-Importer dans `app/layout.tsx` uniquement.
+Importer dans `app/layout.tsx` uniquement. Pas de client Firebase dans ce projet — tous les accès Firestore passent par le SDK Admin côté serveur.
 
 ---
 

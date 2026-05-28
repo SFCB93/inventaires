@@ -71,19 +71,19 @@ Un repository par feature. Toujours try/catch, toujours Result<T>.
 ```ts
 // features/[feature]/domain/actions.ts
 'use server'
+import { ok } from '@/shared/domain/result'
+import type { Result } from '@/shared/domain/result'
 import { revalidatePath } from 'next/cache'
 import { createSacUseCase } from './use-cases'
 
-export async function createSacAction(formData: FormData) {
+export async function createSacAction(formData: FormData): Promise<Result<void>> {
   const result = await createSacUseCase({
     nom: formData.get('nom') as string,
     description: formData.get('description') as string,
   })
-
-  if (!result.ok) return { error: result.error }
-
+  if (!result.ok) return result
   revalidatePath('/dashboard/sacs')
-  return { success: true, sacId: result.value.id }
+  return ok(undefined)
 }
 ```
 
@@ -106,7 +106,7 @@ export function useCreerSac() {
     setError(null)
     const result = await createSacAction(formData)
     setLoading(false)
-    if ('error' in result) setError(result.error)
+    if (!result.ok) setError(result.error)
     return result
   }
 
@@ -169,6 +169,14 @@ Ne jamais court-circuiter ce flux.
 4. **Pas d'appel Firestore hors repository**.
 5. **Signaler les dépendances manquantes** : si la feature a besoin d'une donnée
    d'une autre feature, le noter clairement.
+6. **Vérifier l'appartenance avant toute mutation backoffice** — appeler
+   `checkOwnership(resourceId, associationId)` avant tout update ou delete.
+   Voir le pattern dans `skills/firestore.md`.
+7. **Ne pas exposer d'IDs internes dans les réponses d'actions** — retourner
+   `ok(undefined)` si l'UI n'a pas besoin de la valeur de retour. Ne pas
+   inclure d'UIDs Firebase ou de chemins de stockage.
+8. **Vérifier `shared/lib/` avant de créer un utilitaire** — `chunkArray`,
+   `formatDate`, `fromAddress` y sont déjà définis.
 
 ## Gate Implémentation — Arrêt obligatoire
 

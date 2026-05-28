@@ -208,6 +208,18 @@ Firebase Auth côté backoffice uniquement.
 Le frontoffice (validateur) est entièrement public.
 Middleware Next.js protège le route group `(backoffice)`.
 
+### Sécurité — règles strictes
+**Vérification d'appartenance** : avant toute mutation backoffice (update, delete),
+vérifier que la ressource appartient à l'association de l'utilisateur connecté.
+Appeler `checkOwnership(resourceId, associationId)` en début d'action.
+Si la vérification échoue : `return err('Accès non autorisé.')`.
+Ne jamais omettre cette vérification, même si la route est protégée par le middleware.
+
+**Ne pas exposer d'informations internes** dans les réponses d'actions :
+- Pas d'UIDs Firebase
+- Pas de chemins de stockage internes
+- Retourner `ok(undefined)` quand la valeur n'est pas utilisée côté client
+
 ---
 
 ## Agents disponibles
@@ -219,6 +231,7 @@ Middleware Next.js protège le route group `(backoffice)`.
 | Dev | `agents/dev.md` | Implémente use cases, repositories, branchement |
 | Review | `agents/review.md` | Relit le code et produit un rapport structuré |
 | Test | `agents/test.md` | Écrit les tests après validation de la review |
+| Refactor | `agents/refactor.md` | Modifications ISO (déduplication, alignement de patterns, nommage) |
 
 ---
 
@@ -238,6 +251,15 @@ Middleware Next.js protège le route group `(backoffice)`.
                          Agent review → rapport
                               ↓
                          Agent test → tests
+```
+
+**Workflow de cohérence (ponctuel)** :
+```
+[Constat d'incohérence] → Agent review (périmètre codebase)
+                                ↓
+                           Agent refactor → corrections ISO
+                                ↓
+                           npm test + npm run build
 ```
 
 ### Gates strictes

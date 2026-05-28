@@ -30,7 +30,8 @@ Les corrections sont faites par le développeur ou un nouvel appel à l'agent de
 ### 2. Architecture
 - [ ] Les composants UI ne font pas d'appels Firestore directs
 - [ ] Les use cases ne font pas d'appels Firestore directs
-- [ ] Tous les use cases retournent `Result<T>`
+- [ ] Tous les use cases **et toutes les Server Actions** retournent `Result<T>` — pas `{ error } | { success }` ni `{ error } | { id }`
+- [ ] Les hooks consomment les actions avec `!result.ok`, jamais `'error' in result`
 - [ ] Pas de `throw` dans les use cases ou repositories (sauf dans le catch)
 - [ ] Le Zustand store ne contient pas de logique métier
 - [ ] Les Server Actions délèguent aux use cases, sans logique propre
@@ -38,6 +39,8 @@ Les corrections sont faites par le développeur ou un nouvel appel à l'agent de
 ### 3. Qualité du code
 - [ ] Pas de `any` TypeScript
 - [ ] Pas de `console.log` oubliés
+- [ ] Pas d'imports inutilisés ni de variables déclarées mais jamais lues
+- [ ] Pas de code mort (branches inaccessibles, fonctions exportées non importées nulle part)
 - [ ] Les `useEffect` ont leurs dépendances complètes
 - [ ] Les composants `'use client'` sont justifiés
 - [ ] Pas de prop drilling excessif (> 3 niveaux)
@@ -46,6 +49,8 @@ Les corrections sont faites par le développeur ou un nouvel appel à l'agent de
 ### 4. Sécurité
 - [ ] Les routes backoffice sont protégées par le middleware
 - [ ] Les Server Actions vérifient l'authentification si nécessaire
+- [ ] Les Server Actions backoffice vérifient l'appartenance à l'association avant toute mutation (update, delete)
+- [ ] Les réponses d'actions n'exposent pas d'UIDs Firebase, de chemins internes ou de données structurelles
 - [ ] Pas de données sensibles dans les variables `NEXT_PUBLIC_*`
 - [ ] Les règles Firestore sont cohérentes avec les accès du code
 
@@ -55,9 +60,15 @@ Les corrections sont faites par le développeur ou un nouvel appel à l'agent de
 - [ ] Les boutons ont des `aria-label` si le texte visible est insuffisant
 - [ ] Les formulaires ont des labels associés
 
-### 6. Maintenabilité
-- [ ] Les fichiers respectent les conventions de nommage de CLAUDE.md
+### 6. Performance
+- [ ] Pas de requêtes N+1 dans les repositories — charger les sous-ressources groupées, pas en boucle
+- [ ] Les requêtes `in` avec plusieurs IDs utilisent `chunkArray(ids, 30)` depuis `@/shared/lib/array`
+- [ ] Les batch writes utilisent `chunkArray(refs, 490)` depuis `@/shared/lib/array`
+
+### 7. Maintenabilité
+- [ ] Les fichiers respectent les conventions de nommage de CLAUDE.md (anglais, PascalCase composants, camelCase variables)
 - [ ] Pas de code dupliqué entre features (signaler, pas refactorer)
+- [ ] Aucun utilitaire de `shared/lib/` n'est réimplémenté localement (`chunkArray`, `formatDate`, `fromAddress`…)
 - [ ] Les commentaires `// TODO` et `// DIVERGENCE SPEC` sont listés
 
 ---
@@ -83,6 +94,10 @@ Les corrections sont faites par le développeur ou un nouvel appel à l'agent de
 ✗ ...
 
 ## Sécurité
+✓ ...
+✗ ...
+
+## Performance
 ✓ ...
 ✗ ...
 
