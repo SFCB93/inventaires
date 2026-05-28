@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
   try {
     const buffer = Buffer.from(await file.arrayBuffer())
     const token = crypto.randomUUID()
-    const path = `materiels/${crypto.randomUUID()}/${file.name}`
+    const ext = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '') ?? 'bin'
+    const path = `materiels/${crypto.randomUUID()}/photo.${ext}`
     const fileRef = adminStorage.bucket().file(path)
 
     await fileRef.save(buffer, {
