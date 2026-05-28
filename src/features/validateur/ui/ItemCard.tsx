@@ -16,8 +16,9 @@ export function ItemCard({ item, onPresent, onAnomaly }: ItemCardProps) {
   const {
     expiryDate, setExpiryDate, dateError,
     isModalOpen, setIsModalOpen,
+    dragX, isDragging, overlayOpacity, showAnomalyBadge, showOkBadge, cardRotate,
     handleMarkPresent, handleOpenAnomaly, handleConfirmAnomaly,
-    handleTouchStart, handleTouchEnd,
+    handleTouchStart, handleTouchMove, handleTouchEnd,
   } = useItemCard(item, onPresent, onAnomaly)
 
   const hasPhoto = Boolean(item.photoUrl)
@@ -27,9 +28,37 @@ export function ItemCard({ item, onPresent, onAnomaly }: ItemCardProps) {
       <div
         data-testid="item-card"
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="flex flex-col flex-1"
+        style={{
+          transform: `translateX(${dragX}px) rotate(${cardRotate}deg)`,
+          transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+          willChange: 'transform',
+        }}
+        className="flex flex-col flex-1 relative"
       >
+        {overlayOpacity > 0 && (
+          <div
+            className="absolute inset-0 pointer-events-none z-10"
+            style={{
+              backgroundColor: dragX > 0
+                ? `rgba(245, 158, 11, ${overlayOpacity})`
+                : `rgba(16, 185, 129, ${overlayOpacity})`,
+            }}
+          />
+        )}
+
+        {showAnomalyBadge && (
+          <div className="absolute top-6 left-5 z-20 border-4 border-amber-500 text-amber-500 bg-white/90 rounded-xl px-3 py-1.5 font-bold text-lg -rotate-12">
+            ⚠ ANOMALIE
+          </div>
+        )}
+        {showOkBadge && (
+          <div className="absolute top-6 right-5 z-20 border-4 border-emerald-600 text-emerald-600 bg-white/90 rounded-xl px-3 py-1.5 font-bold text-lg rotate-12">
+            ✓ OK
+          </div>
+        )}
+
         {hasPhoto && (
           <div className="relative w-full aspect-[4/3] bg-slate-100">
             <Image src={item.photoUrl} alt={item.name} fill className="object-cover" sizes="100vw" priority />
