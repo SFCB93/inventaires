@@ -68,7 +68,7 @@ Les corrections sont faites par le développeur ou un nouvel appel à l'agent de
 ### 7. Maintenabilité
 - [ ] Les fichiers respectent les conventions de nommage de CLAUDE.md (anglais, PascalCase composants, camelCase variables)
 - [ ] Pas de code dupliqué entre features (signaler, pas refactorer)
-- [ ] Aucun utilitaire de `shared/lib/` n'est réimplémenté localement (`chunkArray`, `formatDate`, `fromAddress`…)
+- [ ] Aucun utilitaire de `shared/lib/` n'est réimplémenté localement
 - [ ] Les commentaires `// TODO` et `// DIVERGENCE SPEC` sont listés
 
 ---

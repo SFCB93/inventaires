@@ -187,8 +187,8 @@ Ne jamais court-circuiter ce flux.
 7. **Ne pas exposer d'IDs internes dans les réponses d'actions** — retourner
    `ok(undefined)` si l'UI n'a pas besoin de la valeur de retour. Ne pas
    inclure d'UIDs Firebase ou de chemins de stockage.
-8. **Vérifier `shared/lib/` avant de créer un utilitaire** — `chunkArray`,
-   `formatDate`, `fromAddress` y sont déjà définis.
+8. **Vérifier `shared/lib/` avant de créer un utilitaire** — ne pas
+   réimplémenter ce qui existe déjà.
 
 ## Gate Implémentation — Arrêt obligatoire
 
