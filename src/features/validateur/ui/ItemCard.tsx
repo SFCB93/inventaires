@@ -19,7 +19,7 @@ export function ItemCard({ item, onPresent, onAnomaly, onDragChange }: ItemCardP
     isModalOpen, setIsModalOpen,
     dragX, isDragging, glowOpacity, showAnomalyBadge, showOkBadge, cardRotate,
     handleMarkPresent, handleOpenAnomaly, handleConfirmAnomaly,
-    handleTouchStart, handleTouchMove, handleTouchEnd,
+    handleTouchStart, handleTouchMove, handleTouchEnd, handleTouchCancel,
   } = useItemCard(item, onPresent, onAnomaly, onDragChange)
 
   const hasPhoto = Boolean(item.photoUrl)
@@ -35,13 +35,14 @@ export function ItemCard({ item, onPresent, onAnomaly, onDragChange }: ItemCardP
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
         style={{
           transform: `translateX(${dragX}px) rotate(${cardRotate}deg)`,
-          transition: isDragging ? 'none' : 'transform 0.3s ease-out, box-shadow 0.3s ease-out',
-          willChange: 'transform',
+          transition: (isDragging || isModalOpen) ? 'none' : 'transform 0.3s ease-out, box-shadow 0.3s ease-out',
+          willChange: isDragging ? 'transform' : undefined,
           boxShadow,
         }}
-        className="flex flex-col flex-1 relative rounded-2xl overflow-hidden bg-white"
+        className="flex flex-col flex-1 relative rounded-2xl overflow-hidden bg-white touch-pan-y"
       >
         {showAnomalyBadge && (
           <div className="absolute top-6 left-5 z-20 border-4 border-amber-500 text-amber-500 bg-white/90 rounded-xl px-3 py-1.5 font-bold text-lg -rotate-12">

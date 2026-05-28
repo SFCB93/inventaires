@@ -63,15 +63,24 @@ export function useItemCard(
     onDragChange?.(newDragX)
   }
 
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null) return
-    const delta = e.changedTouches[0].clientX - touchStartX.current
+  function resetDrag() {
     touchStartX.current = null
     setIsDragging(false)
     setDragX(0)
     onDragChange?.(null)
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const delta = e.changedTouches[0].clientX - touchStartX.current
+    resetDrag()
     if (delta > SWIPE_THRESHOLD) handleOpenAnomaly()
     else if (delta < -SWIPE_THRESHOLD) handleMarkPresent()
+  }
+
+  function handleTouchCancel() {
+    if (touchStartX.current === null) return
+    resetDrag()
   }
 
   const glowOpacity = Math.min(Math.abs(dragX) / OPACITY_SCALE, MAX_GLOW_OPACITY)
@@ -91,5 +100,6 @@ export function useItemCard(
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
+    handleTouchCancel,
   }
 }
