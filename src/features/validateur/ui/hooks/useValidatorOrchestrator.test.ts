@@ -85,7 +85,7 @@ describe('useValidatorOrchestrator — soumission et retry', () => {
   })
 
   it('conserve les résultats après un échec de soumission (retry possible)', async () => {
-    vi.mocked(submitControlAction).mockResolvedValue({ error: 'Erreur réseau' })
+    vi.mocked(submitControlAction).mockResolvedValue({ ok: false, error: 'Erreur réseau' })
     const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartments))
 
     act(() => { result.current.recordResult({ status: 'present' }) })
@@ -100,7 +100,7 @@ describe('useValidatorOrchestrator — soumission et retry', () => {
   })
 
   it("passe à l'étape confirmation après une soumission réussie", async () => {
-    vi.mocked(submitControlAction).mockResolvedValue({ controlId: 'ctrl-1' })
+    vi.mocked(submitControlAction).mockResolvedValue({ ok: true, value: undefined })
     const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartments))
 
     act(() => { result.current.recordResult({ status: 'present' }) })

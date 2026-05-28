@@ -78,7 +78,7 @@ export function useValidatorOrchestrator(
       buildEmailContext(store.results),
     )
     store.setIsSubmitting(false)
-    if ('error' in result) { store.setSubmissionError(result.error); return }
+    if (!result.ok) { store.setSubmissionError(result.error); return }
     store.setSubmittedAt(new Date().toLocaleString('fr-FR'))
     store.setStep('confirmation')
   }

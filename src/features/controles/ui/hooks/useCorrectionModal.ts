@@ -44,7 +44,7 @@ export function useCorrectionModal(onSuccess: () => void) {
       inventoryId: selectedItem.inventoryId,
       newExpiryDate: dateValue,
     })
-    if ('error' in result) {
+    if (!result.ok) {
       setError(result.error)
       setIsSubmitting(false)
       return

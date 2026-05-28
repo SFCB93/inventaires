@@ -56,7 +56,7 @@ describe('useCorrectionModal', () => {
   })
 
   it("appelle createCorrectionAction avec les bonnes données pour une date valide", async () => {
-    vi.mocked(createCorrectionAction).mockResolvedValue({ ok: true })
+    vi.mocked(createCorrectionAction).mockResolvedValue({ ok: true, value: undefined })
     const { result } = renderHook(() => useCorrectionModal(onSuccess))
     const futureDate = dateInDays(60)
     act(() => result.current.open(mockItem))
@@ -70,7 +70,7 @@ describe('useCorrectionModal', () => {
   })
 
   it("appelle onSuccess et ferme la modale après une correction réussie", async () => {
-    vi.mocked(createCorrectionAction).mockResolvedValue({ ok: true })
+    vi.mocked(createCorrectionAction).mockResolvedValue({ ok: true, value: undefined })
     const { result } = renderHook(() => useCorrectionModal(onSuccess))
     act(() => result.current.open(mockItem))
     act(() => result.current.handleDateChange(dateInDays(60)))
@@ -80,7 +80,7 @@ describe('useCorrectionModal', () => {
   })
 
   it("affiche l'erreur serveur et garde la modale ouverte en cas d'échec", async () => {
-    vi.mocked(createCorrectionAction).mockResolvedValue({ error: 'Erreur réseau' })
+    vi.mocked(createCorrectionAction).mockResolvedValue({ ok: false, error: 'Erreur réseau' })
     const { result } = renderHook(() => useCorrectionModal(onSuccess))
     act(() => result.current.open(mockItem))
     act(() => result.current.handleDateChange(dateInDays(60)))
