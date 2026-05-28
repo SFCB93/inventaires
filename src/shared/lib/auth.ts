@@ -21,7 +21,10 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
     let associationId = (data.associationId as string) ?? ''
     if (role === 'superadmin') {
       const actingAs = cookieStore.get('acting-as')
-      associationId = actingAs?.value ?? ''
+      if (actingAs?.value) {
+        const assocDoc = await adminDb.collection('associations').doc(actingAs.value).get()
+        if (assocDoc.exists) associationId = actingAs.value
+      }
     }
     return { uid: decoded.uid, associationId, role }
   } catch {
