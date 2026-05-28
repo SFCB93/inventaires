@@ -1,6 +1,7 @@
 // Dépasse 120 lignes : opérations croisées Firebase Auth + Firestore pour la gestion des comptes.
 import { adminDb, adminAuth } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
+import { DEFAULT_ALERT_THRESHOLD_DAYS, DEFAULT_ALERT_INTERVAL_DAYS } from '@/shared/lib/alert-defaults'
 import type { Result } from '@/shared/domain/result'
 import type { AssociationSummary, AssociationSettings, CreateAssociationInput, UpdateAssociationInput, AdminAccount } from '../domain/types'
 
@@ -58,8 +59,8 @@ export const gestionComptesRepository = {
       return ok({
         name: (data.name as string) ?? '',
         notificationEmails: (data.notificationEmails as string[]) ?? [],
-        alertThresholdDays: (data.alertThresholdDays as number | undefined) ?? 30,
-        alertIntervalDays: (data.alertIntervalDays as number | undefined) ?? 7,
+        alertThresholdDays: (data.alertThresholdDays as number | undefined) ?? DEFAULT_ALERT_THRESHOLD_DAYS,
+        alertIntervalDays: (data.alertIntervalDays as number | undefined) ?? DEFAULT_ALERT_INTERVAL_DAYS,
       })
     } catch (error) {
       console.error('[getAssociationSettings]', error)

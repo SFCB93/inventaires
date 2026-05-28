@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
+import { DEFAULT_ALERT_THRESHOLD_DAYS, DEFAULT_ALERT_INTERVAL_DAYS } from '@/shared/lib/alert-defaults'
 
 export type AssociationAlertConfig = {
   id: string
@@ -26,8 +27,8 @@ export const expiryAlertsRepository = {
           id: doc.id,
           name: (d.name as string) ?? '',
           notificationEmails: (d.notificationEmails as string[]) ?? [],
-          alertThresholdDays: (d.alertThresholdDays as number | undefined) ?? 30,
-          alertIntervalDays: (d.alertIntervalDays as number | undefined) ?? 7,
+          alertThresholdDays: (d.alertThresholdDays as number | undefined) ?? DEFAULT_ALERT_THRESHOLD_DAYS,
+          alertIntervalDays: (d.alertIntervalDays as number | undefined) ?? DEFAULT_ALERT_INTERVAL_DAYS,
         }
       }))
     } catch (error) {

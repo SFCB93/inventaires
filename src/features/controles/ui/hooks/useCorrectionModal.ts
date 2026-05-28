@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { ExpiryAlertItem } from '../../domain/types'
 import { createCorrectionAction } from '../../domain/actions'
+import { DEFAULT_ALERT_THRESHOLD_DAYS } from '@/shared/lib/alert-defaults'
 
 export function useCorrectionModal(onSuccess: () => void) {
   const [selectedItem, setSelectedItem] = useState<ExpiryAlertItem | null>(null)
@@ -32,9 +33,9 @@ export function useCorrectionModal(onSuccess: () => void) {
     if (!selectedItem) return
     if (!dateValue) { setDateError('La date est obligatoire.'); return }
     const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() + 30)
+    cutoff.setDate(cutoff.getDate() + DEFAULT_ALERT_THRESHOLD_DAYS)
     if (new Date(dateValue) <= cutoff) {
-      setDateError("Cette date ne résout pas l'alerte (doit être > J+30).")
+      setDateError(`Cette date ne résout pas l'alerte (doit être > J+${DEFAULT_ALERT_THRESHOLD_DAYS}).`)
       return
     }
     setIsSubmitting(true)

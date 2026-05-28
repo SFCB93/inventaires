@@ -2,7 +2,7 @@
 import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
-import { chunkArray } from '@/shared/lib/array'
+import { chunkArray, FIRESTORE_IN_LIMIT, FIRESTORE_BATCH_LIMIT } from '@/shared/lib/array'
 import type { Inventory, InventoryWithCompartmentCount, InventoryWithCompartments, CompartmentWithItems, Item } from '../domain/types'
 
 export async function listInventories(associationId: string): Promise<Result<InventoryWithCompartmentCount[]>> {
@@ -11,7 +11,7 @@ export async function listInventories(associationId: string): Promise<Result<Inv
     if (snap.empty) return ok([])
     const ids = snap.docs.map((d) => d.id)
     const countMap = new Map<string, number>()
-    for (const chunk of chunkArray(ids, 30)) {
+    for (const chunk of chunkArray(ids, FIRESTORE_IN_LIMIT)) {
       const compSnap = await adminDb.collection('emplacements').where('inventoryId', 'in', chunk).get()
       for (const doc of compSnap.docs) {
         const invId = doc.data().inventoryId as string
@@ -45,7 +45,7 @@ export async function getInventory(inventoryId: string, associationId: string): 
     const itemsByCompartment = new Map<string, Item[]>()
 
     if (compartmentIds.length > 0) {
-      for (const chunk of chunkArray(compartmentIds, 30)) {
+      for (const chunk of chunkArray(compartmentIds, FIRESTORE_IN_LIMIT)) {
         const itemsSnap = await adminDb.collection('materiels').where('compartmentId', 'in', chunk).get()
         for (const doc of itemsSnap.docs) {
           const data = doc.data()
@@ -114,7 +114,7 @@ export async function deleteInventory(inventoryId: string, associationId: string
     const compartmentIds = compartmentsSnap.docs.map((d) => d.id)
     const itemIds: string[] = []
 
-    for (const chunk of chunkArray(compartmentIds, 30)) {
+    for (const chunk of chunkArray(compartmentIds, FIRESTORE_IN_LIMIT)) {
       const itemsSnap = await adminDb.collection('materiels').where('compartmentId', 'in', chunk).get()
       itemIds.push(...itemsSnap.docs.map((d) => d.id))
     }
@@ -124,7 +124,7 @@ export async function deleteInventory(inventoryId: string, associationId: string
       ...compartmentsSnap.docs.map((d) => adminDb.collection('emplacements').doc(d.id)),
       adminDb.collection('inventaires').doc(inventoryId),
     ]
-    for (const chunk of chunkArray(allRefs, 490)) {
+    for (const chunk of chunkArray(allRefs, FIRESTORE_BATCH_LIMIT)) {
       const batch = adminDb.batch()
       chunk.forEach((ref) => batch.delete(ref))
       await batch.commit()
@@ -149,7 +149,7 @@ export async function duplicateInventory(inventoryId: string, associationId: str
 
     const empIds = empSnap.docs.map((d) => d.id)
     const allMatDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
-    for (const chunk of chunkArray(empIds, 30)) {
+    for (const chunk of chunkArray(empIds, FIRESTORE_IN_LIMIT)) {
       const snap = await adminDb.collection('materiels').where('compartmentId', 'in', chunk).get()
       allMatDocs.push(...snap.docs)
     }
@@ -167,7 +167,7 @@ export async function duplicateInventory(inventoryId: string, associationId: str
         name: empData.name, order: empData.order, inventoryId: newInvRef.id,
       })
       const mats = matsByEmp.get(empDoc.id) ?? []
-      for (const chunk of chunkArray(mats, 490)) {
+      for (const chunk of chunkArray(mats, FIRESTORE_BATCH_LIMIT)) {
         const batch = adminDb.batch()
         chunk.forEach((d) => {
           batch.set(adminDb.collection('materiels').doc(), {

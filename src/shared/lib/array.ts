@@ -1,3 +1,6 @@
+export const FIRESTORE_IN_LIMIT = 30
+export const FIRESTORE_BATCH_LIMIT = 490
+
 export function chunkArray<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = []
   for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size))

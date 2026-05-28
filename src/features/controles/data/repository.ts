@@ -1,7 +1,8 @@
 // Dépasse 100 lignes : agrège contrôles, corrections, matériels et emplacements pour 4 use cases distincts.
 import { FieldPath, FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/shared/data/firebase-admin'
-import { chunkArray } from '@/shared/lib/array'
+import { chunkArray, FIRESTORE_IN_LIMIT } from '@/shared/lib/array'
+import { DEFAULT_ALERT_THRESHOLD_DAYS } from '@/shared/lib/alert-defaults'
 import type { Result } from '@/shared/domain/result'
 import { ok, err } from '@/shared/domain/result'
 import type {
@@ -24,14 +25,14 @@ function todayPlusDays(n: number): Date {
 async function getAlertThreshold(associationId: string): Promise<number> {
   try {
     const doc = await adminDb.collection('associations').doc(associationId).get()
-    return (doc.data()?.alertThresholdDays as number | undefined) ?? 30
-  } catch { return 30 }
+    return (doc.data()?.alertThresholdDays as number | undefined) ?? DEFAULT_ALERT_THRESHOLD_DAYS
+  } catch { return DEFAULT_ALERT_THRESHOLD_DAYS }
 }
 
 async function batchGetNames(collectionName: string, ids: string[]): Promise<Map<string, string>> {
   const result = new Map<string, string>()
   if (ids.length === 0) return result
-  for (const chunk of chunkArray(ids, 30)) {
+  for (const chunk of chunkArray(ids, FIRESTORE_IN_LIMIT)) {
     const snap = await adminDb.collection(collectionName).where(FieldPath.documentId(), 'in', chunk).get()
     for (const doc of snap.docs) result.set(doc.id, doc.data().name ?? '')
   }
@@ -50,7 +51,7 @@ export const controlesRepository = {
       if (inventoriesSnap.empty) return ok([])
       const inventoryIds = inventoriesSnap.docs.map(d => d.id)
       const controlDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
-      for (const chunk of chunkArray(inventoryIds, 30)) {
+      for (const chunk of chunkArray(inventoryIds, FIRESTORE_IN_LIMIT)) {
         const snap = await adminDb.collection('controles').where('inventoryId', 'in', chunk).get()
         controlDocs.push(...snap.docs)
       }
@@ -148,7 +149,7 @@ export const controlesRepository = {
       type Entry = { itemId: string; inventoryId: string; inventoryName: string; compartmentId: string; latestExpiryDate: string; recordedAtMs: number; source: 'control' | 'correction' }
       const entries = new Map<string, Entry>()
       const allControlDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
-      for (const chunk of chunkArray(inventoryIds, 30)) {
+      for (const chunk of chunkArray(inventoryIds, FIRESTORE_IN_LIMIT)) {
         const snap = await adminDb.collection('controles').where('inventoryId', 'in', chunk).get()
         allControlDocs.push(...snap.docs)
       }
