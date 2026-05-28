@@ -2,7 +2,6 @@ import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
 import type { Inventory, InventoryWithCompartmentCount, InventoryWithCompartments, CompartmentWithItems, Item } from '../domain/types'
-import { deleteStorageFile } from './repository-shared'
 
 export async function listInventories(associationId: string): Promise<Result<InventoryWithCompartmentCount[]>> {
   try {
@@ -102,18 +101,16 @@ export async function deleteInventory(inventoryId: string, associationId: string
     if (doc.data()!.associationId !== associationId) return err('Accès non autorisé.')
     const compartmentsSnap = await adminDb.collection('emplacements').where('inventoryId', '==', inventoryId).get()
     const compartmentIds = compartmentsSnap.docs.map((d) => d.id)
-    const itemDocs: { id: string; photoStoragePath?: string }[] = []
+    const itemIds: string[] = []
 
     for (let i = 0; i < compartmentIds.length; i += 30) {
       const chunk = compartmentIds.slice(i, i + 30)
       const itemsSnap = await adminDb.collection('materiels').where('compartmentId', 'in', chunk).get()
-      itemDocs.push(...itemsSnap.docs.map((d) => ({ id: d.id, photoStoragePath: d.data().photoStoragePath as string | undefined })))
+      itemIds.push(...itemsSnap.docs.map((d) => d.id))
     }
 
-    await Promise.all(itemDocs.filter((i) => i.photoStoragePath).map((i) => deleteStorageFile(i.photoStoragePath!)))
-
     const allRefs = [
-      ...itemDocs.map((i) => adminDb.collection('materiels').doc(i.id)),
+      ...itemIds.map((id) => adminDb.collection('materiels').doc(id)),
       ...compartmentsSnap.docs.map((d) => adminDb.collection('emplacements').doc(d.id)),
       adminDb.collection('inventaires').doc(inventoryId),
     ]

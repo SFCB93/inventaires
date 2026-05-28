@@ -64,14 +64,14 @@ export async function reorderCompartmentsAction(inventoryId: string, orderedIds:
   if (result.ok) revalidatePath(path(inventoryId))
   return result
 }
-export async function createItemAction(inventoryId: string, data: { compartmentId: string; name: string; photoUrl: string; photoStoragePath: string; hasExpiry: boolean; isCritical: boolean }): Promise<Result<Item>> {
+export async function createItemAction(inventoryId: string, data: { compartmentId: string; name: string; photoUrl: string; hasExpiry: boolean; isCritical: boolean }): Promise<Result<Item>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
-  const result = await uc.createItemUseCase(data.compartmentId, { name: data.name, photoUrl: data.photoUrl, photoStoragePath: data.photoStoragePath, hasExpiry: data.hasExpiry, isCritical: data.isCritical })
+  const result = await uc.createItemUseCase(data.compartmentId, { name: data.name, photoUrl: data.photoUrl, hasExpiry: data.hasExpiry, isCritical: data.isCritical })
   if (result.ok) revalidatePath(path(inventoryId))
   return result
 }
-export async function updateItemAction(inventoryId: string, itemId: string, data: { name?: string; photoUrl?: string; photoStoragePath?: string; hasExpiry?: boolean; isCritical?: boolean }): Promise<Result<void>> {
+export async function updateItemAction(inventoryId: string, itemId: string, data: { name?: string; photoUrl?: string; hasExpiry?: boolean; isCritical?: boolean }): Promise<Result<void>> {
   const user = await getAuthenticatedUser()
   if (!user) return err('Non authentifié.')
   const result = await uc.updateItemUseCase(itemId, data)

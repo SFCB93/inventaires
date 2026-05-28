@@ -2,8 +2,6 @@ import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
 import type { Compartment } from '../domain/types'
-import { deleteStorageFile } from './repository-shared'
-
 export async function createCompartment(inventoryId: string, name: string): Promise<Result<Compartment>> {
   try {
     const existing = await adminDb.collection('emplacements').where('inventoryId', '==', inventoryId).get()
@@ -27,9 +25,6 @@ export async function updateCompartment(compartmentId: string, name: string): Pr
 export async function deleteCompartment(compartmentId: string): Promise<Result<void>> {
   try {
     const itemsSnap = await adminDb.collection('materiels').where('compartmentId', '==', compartmentId).get()
-    await Promise.all(
-      itemsSnap.docs.filter((d) => d.data().photoStoragePath).map((d) => deleteStorageFile(d.data().photoStoragePath as string)),
-    )
     const batch = adminDb.batch()
     itemsSnap.docs.forEach((d) => batch.delete(adminDb.collection('materiels').doc(d.id)))
     batch.delete(adminDb.collection('emplacements').doc(compartmentId))

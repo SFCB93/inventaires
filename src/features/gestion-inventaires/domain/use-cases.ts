@@ -76,13 +76,12 @@ export async function reorderCompartmentsUseCase(
 
 export async function createItemUseCase(
   compartmentId: string,
-  data: { name: string; photoUrl: string; photoStoragePath: string; hasExpiry: boolean; isCritical: boolean },
+  data: { name: string; photoUrl: string; hasExpiry: boolean; isCritical: boolean },
 ): Promise<Result<Item>> {
   if (!data.name.trim()) return err("Le nom du matériel est obligatoire.")
   return inventoryRepository.createItem(compartmentId, {
     name: data.name.trim(),
     photoUrl: data.photoUrl,
-    photoStoragePath: data.photoStoragePath,
     hasExpiry: data.hasExpiry,
     isCritical: data.isCritical,
   })
@@ -90,7 +89,7 @@ export async function createItemUseCase(
 
 export async function updateItemUseCase(
   itemId: string,
-  data: { name?: string; photoUrl?: string; photoStoragePath?: string; hasExpiry?: boolean; isCritical?: boolean },
+  data: { name?: string; photoUrl?: string; hasExpiry?: boolean; isCritical?: boolean },
 ): Promise<Result<void>> {
   if (data.name !== undefined && !data.name.trim()) return err("Le nom du matériel est obligatoire.")
   return inventoryRepository.updateItem(itemId, {

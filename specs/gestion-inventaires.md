@@ -26,6 +26,17 @@ Permettre à un responsable d'association de créer et maintenir la structure co
 6. Il peut modifier le nom de l'inventaire directement sur la page.
 7. Il peut supprimer l'inventaire depuis cette page.
 
+### Duplication d'un inventaire
+
+8. Sur la liste des inventaires, chaque ligne dispose d'un bouton **Dupliquer**.
+9. L'admin clique sur **Dupliquer** → état de chargement sur le bouton.
+10. Un nouvel inventaire est créé avec :
+    - Nom : `[nom original] (copie)`
+    - Tous les emplacements dupliqués (nouveaux IDs, mêmes noms, même `order`)
+    - Tous les matériels dupliqués dans leurs emplacements respectifs
+      (nouveaux IDs, mêmes noms, même `photoUrl`, mêmes `hasExpiry`, `isCritical`, `order`)
+11. Le nouvel inventaire apparaît dans la liste. L'admin reste sur la page liste.
+
 ### Gestion des emplacements
 
 8. L'admin clique **Ajouter un emplacement** → formulaire inline (nom).
@@ -56,6 +67,7 @@ Permettre à un responsable d'association de créer et maintenir la structure co
 - Si la suppression d'un inventaire est demandée → confirmation obligatoire avant suppression ("Supprimer cet inventaire et tout son contenu ?").
 - Si la suppression d'un emplacement est demandée → confirmation obligatoire ("Supprimer cet emplacement et ses matériels ?").
 - Si une erreur réseau survient lors d'une mutation → message d'erreur non bloquant, l'action peut être retentée.
+- Si la duplication échoue en cours de route → les documents partiellement créés seront supprimés par le CRON de nettoyage des orphelins ; un message d'erreur s'affiche à l'admin.
 - Si l'admin accède à l'URL d'un inventaire qui n'appartient pas à son association → page 404.
 - Si l'utilisateur n'est pas authentifié → redirigé vers la page de login par le middleware.
 
@@ -75,13 +87,17 @@ Permettre à un responsable d'association de créer et maintenir la structure co
 - La suppression d'un emplacement supprime en cascade tous ses matériels.
 - Les contrôles existants (`controles`) ne sont **pas supprimés** lors de la suppression d'un inventaire : ils restent à titre d'historique.
 - Un inventaire appartient à une seule association ; cette appartenance ne peut pas être changée après création.
+- La duplication produit une **copie indépendante** — aucune référence partagée entre l'original et la copie.
+- La `photoUrl` (base64) est copiée telle quelle — c'est une donnée, pas une référence externe.
+- `photoStoragePath` reste `''` dans la copie (Firebase Storage hors scope).
+- Le nom de la copie est `[nom original] (copie)`. Si l'original s'appelle déjà `X (copie)`, la copie s'appelle `X (copie) (copie)` — pas de logique de déduplication des noms.
 
 ---
 
 ## Composants UI à créer
 
 - `InventoryList` — liste paginable des inventaires de l'association, avec bouton de création
-- `InventoryListItem` — une ligne de la liste (nom, compteur d'emplacements, lien vers le détail)
+- `InventoryListItem` — une ligne de la liste (nom, compteur d'emplacements, lien vers le détail, bouton Dupliquer)
 - `CreateInventoryForm` — formulaire de création d'inventaire (nom, validation inline)
 - `InventoryDetailPage` — page détail : nom éditable, liste des emplacements, actions
 - `CompartmentSection` — section dépliable pour un emplacement : nom éditable, liste des matériels, drag & drop
@@ -102,6 +118,7 @@ createInventoryUseCase(associationId: string, name: string) → Result<Inventory
 updateInventoryUseCase(inventoryId: string, associationId: string, name: string) → Result<void>
 deleteInventoryUseCase(inventoryId: string, associationId: string) → Result<void>
 getInventoryUseCase(inventoryId: string, associationId: string) → Result<InventoryWithCompartments>
+duplicateInventoryUseCase(inventoryId: string, associationId: string) → Result<Inventory>
 
 // Emplacements
 createCompartmentUseCase(inventoryId: string, name: string) → Result<Compartment>
@@ -193,7 +210,8 @@ Aucune notification mail déclenchée par cette feature.
 ## Hors scope
 
 - Recadrage ou compression de la photo avant upload
-- Duplication d'un inventaire ou d'un emplacement
+- Duplication d'un emplacement seul
+- Duplication avec référence partagée (les matériels seraient les mêmes documents)
 - Import/export CSV ou Excel des matériels
 - Gestion des adresses mail de notification (feature distincte — paramètres du compte)
 - Génération du QR code (feature distincte)

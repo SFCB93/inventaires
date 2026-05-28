@@ -80,7 +80,7 @@ describe('updateCompartmentUseCase', () => {
 describe('createItemUseCase', () => {
   // Règle spec : "Le nom d'un matériel est obligatoire et non vide."
   it('retourne une erreur si le nom est vide', async () => {
-    const result = await createItemUseCase('cmp-1', { name: '', photoUrl: '', photoStoragePath: '', hasExpiry: false, isCritical: false })
+    const result = await createItemUseCase('cmp-1', { name: '', photoUrl: '', hasExpiry: false, isCritical: false })
     expect(result.ok).toBe(false)
     expect(repo.createItem).not.toHaveBeenCalled()
   })
