@@ -1,5 +1,5 @@
 export const FIRESTORE_IN_LIMIT = 30
-export const FIRESTORE_BATCH_LIMIT = 490
+export const FIRESTORE_BATCH_LIMIT = 490 // limite réelle : 500 — marge de 10 pour les refs implicites
 
 export function chunkArray<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = []
