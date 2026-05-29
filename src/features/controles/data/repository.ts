@@ -26,7 +26,10 @@ async function getAlertThreshold(associationId: string): Promise<number> {
   try {
     const doc = await adminDb.collection('associations').doc(associationId).get()
     return (doc.data()?.alertThresholdDays as number | undefined) ?? DEFAULT_ALERT_THRESHOLD_DAYS
-  } catch { return DEFAULT_ALERT_THRESHOLD_DAYS }
+  } catch (error) {
+    console.error('[getAlertThreshold]', error)
+    return DEFAULT_ALERT_THRESHOLD_DAYS
+  }
 }
 
 async function batchGetNames(collectionName: string, ids: string[]): Promise<Map<string, string>> {
