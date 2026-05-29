@@ -1,22 +1,9 @@
 // Dépasse 120 lignes : opérations croisées Firebase Auth + Firestore pour la gestion des comptes.
-import { headers } from 'next/headers'
 import { adminDb, adminAuth } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import { DEFAULT_ALERT_THRESHOLD_DAYS, DEFAULT_ALERT_INTERVAL_DAYS } from '@/shared/lib/alert-defaults'
 import type { Result } from '@/shared/domain/result'
 import type { AssociationSummary, AssociationSettings, CreateAssociationInput, UpdateAssociationInput, AdminAccount } from '../domain/types'
-
-async function loginContinueUrl(): Promise<{ url: string } | undefined> {
-  try {
-    const h = await headers()
-    const host = h.get('host')
-    if (!host) return undefined
-    const proto = process.env.NODE_ENV === 'production' ? 'https' : 'http'
-    return { url: `${proto}://${host}/login` }
-  } catch {
-    return undefined
-  }
-}
 
 export const gestionComptesRepository = {
   async listAssociations(): Promise<Result<AssociationSummary[]>> {
@@ -55,12 +42,17 @@ export const gestionComptesRepository = {
       uid = authUser.uid
       const assocRef = await adminDb.collection('associations').add({ name: input.name, notificationEmails: [] })
       await adminDb.collection('users').doc(uid).set({ associationId: assocRef.id, role: 'admin' })
-      const resetLink = await adminAuth.generatePasswordResetLink(input.adminEmail, await loginContinueUrl())
-      return ok({ resetLink })
     } catch (error) {
-      if (uid) console.error(`[createAssociation] Compte Auth créé (${uid}) mais échec Firestore — nettoyage manuel requis.`)
+      if (uid) console.error(`[createAssociation] Compte Auth créé (${uid}) mais échec Firestore — nettoyage manuel requis.`, error)
       else console.error('[createAssociation]', error)
       return err('Impossible de créer l\'association.')
+    }
+    try {
+      const resetLink = await adminAuth.generatePasswordResetLink(input.adminEmail)
+      return ok({ resetLink })
+    } catch (error) {
+      console.error(`[createAssociation] Compte créé (${uid}) mais génération du lien échouée.`, error)
+      return ok({ resetLink: '' })
     }
   },
 
@@ -120,13 +112,18 @@ export const gestionComptesRepository = {
       const authUser = await adminAuth.createUser({ email })
       uid = authUser.uid
       await adminDb.collection('users').doc(uid).set({ associationId, role: 'admin' })
-      const resetLink = await adminAuth.generatePasswordResetLink(email, await loginContinueUrl())
-      return ok({ resetLink })
     } catch (error) {
       const code = (error as { code?: string }).code
       if (code === 'auth/email-already-exists') return err('Un compte existe déjà avec cet email.')
-      if (uid) console.error(`[createAdminAccount] Compte Auth créé (${uid}) mais échec Firestore`)
+      if (uid) console.error(`[createAdminAccount] Compte Auth créé (${uid}) mais échec Firestore`, error)
       return err(`Impossible de créer le compte. Erreur: ${(error as Error).message}`)
+    }
+    try {
+      const resetLink = await adminAuth.generatePasswordResetLink(email)
+      return ok({ resetLink })
+    } catch (error) {
+      console.error(`[createAdminAccount] Compte créé (${uid}) mais génération du lien échouée.`, error)
+      return ok({ resetLink: '' })
     }
   },
 
@@ -144,7 +141,7 @@ export const gestionComptesRepository = {
     try {
       const authUser = await adminAuth.getUser(uid)
       if (!authUser.email) return err('Aucun email associé à ce compte.')
-      const resetLink = await adminAuth.generatePasswordResetLink(authUser.email, await loginContinueUrl())
+      const resetLink = await adminAuth.generatePasswordResetLink(authUser.email)
       return ok({ email: authUser.email, resetLink })
     } catch (error) {
       return err(`Impossible de générer le lien. Erreur: ${(error as Error).message}`)

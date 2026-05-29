@@ -194,6 +194,14 @@ Ne jamais court-circuiter ce flux.
    extraite dans une constante nommée (ex. `FIRESTORE_IN_LIMIT`, `DEFAULT_ALERT_THRESHOLD_DAYS`).
    Placer les constantes partagées dans `shared/lib/`, les constantes locales
    à une feature dans le fichier qui les utilise.
+10. **Toujours logger l'erreur dans un catch** — tout `console.error` dans un
+    catch doit inclure la variable d'erreur en dernier argument.
+    ```ts
+    // ✗
+    catch (error) { console.error('[foo] opération échouée') }
+    // ✓
+    catch (error) { console.error('[foo] opération échouée', error) }
+    ```
 
 ## Gate Implémentation — Arrêt obligatoire
 

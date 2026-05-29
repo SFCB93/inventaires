@@ -18,8 +18,9 @@ export async function createAssociationUseCase(input: CreateAssociationInput, us
   if (!EMAIL_RE.test(input.adminEmail)) return err('Email invalide.')
   const result = await gestionComptesRepository.createAssociation(input)
   if (!result.ok) return result
-  // Best-effort — une erreur d'envoi ne bloque pas la création du compte
-  try { await sendInvitationEmail(input.adminEmail, input.name, result.value.resetLink) } catch { /* ignored */ }
+  if (result.value.resetLink) {
+    try { await sendInvitationEmail(input.adminEmail, input.name, result.value.resetLink) } catch { /* ignored */ }
+  }
   return ok(undefined)
 }
 
@@ -53,7 +54,9 @@ export async function inviteAdminUseCase(email: string, user: AuthenticatedUser)
   if (!result.ok) return result
   const assocResult = await gestionComptesRepository.getAssociationSettings(user.associationId)
   const assocName = assocResult.ok ? assocResult.value.name : 'votre association'
-  try { await sendInvitationEmail(email, assocName, result.value.resetLink) } catch { /* ignored */ }
+  if (result.value.resetLink) {
+    try { await sendInvitationEmail(email, assocName, result.value.resetLink) } catch { /* ignored */ }
+  }
   return ok(undefined)
 }
 

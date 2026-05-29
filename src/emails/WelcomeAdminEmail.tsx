@@ -3,9 +3,10 @@ import { Body, Button, Container, Head, Heading, Hr, Html, Section, Text } from 
 interface WelcomeAdminEmailProps {
   associationName: string
   resetLink: string
+  loginUrl?: string
 }
 
-export function WelcomeAdminEmail({ associationName, resetLink }: WelcomeAdminEmailProps) {
+export function WelcomeAdminEmail({ associationName, resetLink, loginUrl }: WelcomeAdminEmailProps) {
   return (
     <Html>
       <Head />
@@ -45,6 +46,13 @@ export function WelcomeAdminEmail({ associationName, resetLink }: WelcomeAdminEm
             Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :{' '}
             <a href={resetLink} style={{ color: '#2563eb', wordBreak: 'break-all' }}>{resetLink}</a>
           </Text>
+
+          {loginUrl && (
+            <Text style={{ color: '#475569', fontSize: '14px', textAlign: 'center' as const }}>
+              Une fois votre mot de passe défini,{' '}
+              <a href={loginUrl} style={{ color: '#2563eb' }}>connectez-vous ici</a>.
+            </Text>
+          )}
 
           <Hr style={{ borderColor: '#e2e8f0', marginTop: '24px' }} />
           <Text style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic' }}>
