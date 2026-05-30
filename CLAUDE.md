@@ -220,6 +220,12 @@ Ne jamais omettre cette vérification, même si la route est protégée par le m
 - Pas de chemins de stockage internes
 - Retourner `ok(undefined)` quand la valeur n'est pas utilisée côté client
 
+**Comptes orphelins Firebase Auth** : `createAssociation` et `createAdminAccount` créent
+d'abord le compte Firebase Auth, puis écrivent dans Firestore.
+Si l'étape Firestore échoue, un compte Auth existe sans document `users/` associé.
+Le log `[createAssociation] Compte Auth créé (UID) mais échec Firestore — nettoyage manuel requis.`
+indique ce cas. Procédure : supprimer l'UID manuellement dans la console Firebase Auth.
+
 ---
 
 ## Agents disponibles
