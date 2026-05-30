@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { adminAuth, adminDb } from '@/shared/data/firebase-admin'
 
@@ -7,7 +8,7 @@ export type AuthenticatedUser = {
   role: 'admin' | 'superadmin'
 }
 
-export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
+export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | null> => {
   const cookieStore = await cookies()
   const session = cookieStore.get('session')
   if (!session) return null
@@ -30,4 +31,4 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
   } catch {
     return null
   }
-}
+})
