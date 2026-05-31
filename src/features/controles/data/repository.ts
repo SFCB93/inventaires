@@ -7,7 +7,7 @@ import type { Result } from '@/shared/domain/result'
 import { ok, err } from '@/shared/domain/result'
 import type {
   ControlSummary, ControlDetail, ControlCompartment, ItemResult as DomainItemResult,
-  ExpiryAlertReport, ExpiryAlertItem, CreateCorrectionInput,
+  ExpiryAlertReport, ExpiryAlertItem, AnomalyAlertItem, CreateCorrectionInput, CreateAnomalyCorrectionInput,
 } from '../domain/types'
 
 function startOfToday(): Date {
@@ -53,6 +53,7 @@ export const controlesRepository = {
       ])
       if (inventoriesSnap.empty) return ok([])
       const inventoryIds = inventoriesSnap.docs.map(d => d.id)
+      const inventoryNames = new Map(inventoriesSnap.docs.map(d => [d.id, (d.data().name as string) ?? '']))
       const controlDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
       for (const chunk of chunkArray(inventoryIds, FIRESTORE_IN_LIMIT)) {
         const snap = await adminDb.collection('controles').where('inventoryId', 'in', chunk).get()
@@ -66,7 +67,7 @@ export const controlesRepository = {
         return {
           id: doc.id,
           inventoryId: data.inventoryId,
-          inventoryName: data.inventoryName ?? '',
+          inventoryName: inventoryNames.get(data.inventoryId) ?? '',
           verifierName: data.verifierName,
           submittedAt,
           anomalyCount: results.filter(r =>
@@ -99,11 +100,13 @@ export const controlesRepository = {
       const rawResults: any[] = data.results ?? []
       const itemIds = [...new Set(rawResults.map(r => r.itemId as string))]
       const compartmentIds = [...new Set(rawResults.map(r => r.compartmentId as string))]
-      const [itemNames, compartmentNames, correctionsSnap] = await Promise.all([
+      const [itemNames, compartmentNames, correctionsSnap, inventoryDoc] = await Promise.all([
         batchGetNames('materiels', itemIds),
         batchGetNames('emplacements', compartmentIds),
         adminDb.collection('corrections').where('inventoryId', '==', data.inventoryId).get(),
+        adminDb.collection('inventaires').doc(data.inventoryId).get(),
       ])
+      const inventoryName = (inventoryDoc.data()?.name as string) ?? ''
       // "Corrigé" badge: only a correction more recent than this control AND with date > J+30
       const controlSubmittedAtMs: number = data.submittedAt?.toMillis() ?? 0
       const bestCorrectionByItem = new Map<string, string>()
@@ -128,14 +131,14 @@ export const controlesRepository = {
       const compartmentMap = new Map<string, ControlCompartment>()
       for (const r of rawResults) {
         if (!compartmentMap.has(r.compartmentId)) {
-          compartmentMap.set(r.compartmentId, { id: r.compartmentId, name: compartmentNames.get(r.compartmentId) ?? r.compartmentId, results: [] })
+          compartmentMap.set(r.compartmentId, { id: r.compartmentId, name: compartmentNames.get(r.compartmentId) ?? '(emplacement introuvable)', results: [] })
         }
         compartmentMap.get(r.compartmentId)!.results.push({
-          itemId: r.itemId, itemName: itemNames.get(r.itemId) ?? r.itemId,
+          itemId: r.itemId, itemName: itemNames.get(r.itemId) ?? '(matériel introuvable)',
           status: r.status, comment: r.comment ?? null, expiryDate: r.expiryDate ?? null, currentExpiryStatus: computeStatus(r),
         })
       }
-      return ok({ id: controlDoc.id, inventoryName: data.inventoryName ?? '', verifierName: data.verifierName, submittedAt: data.submittedAt?.toDate() ?? new Date(), compartments: [...compartmentMap.values()] })
+      return ok({ id: controlDoc.id, inventoryName, verifierName: data.verifierName, submittedAt: data.submittedAt?.toDate() ?? new Date(), compartments: [...compartmentMap.values()] })
     } catch (error) {
       return err(`Impossible de charger le contrôle. Erreur: ${(error as Error).message}`)
     }
@@ -147,9 +150,10 @@ export const controlesRepository = {
         adminDb.collection('inventaires').where('associationId', '==', associationId).get(),
         providedThreshold !== undefined ? Promise.resolve(providedThreshold) : getAlertThreshold(associationId),
       ])
-      if (inventoriesSnap.empty) return ok({ expired: [], atRisk: [] })
+      if (inventoriesSnap.empty) return ok({ anomalies: [], expired: [], atRisk: [] })
       const inventoryIds = inventoriesSnap.docs.map(d => d.id)
-      type Entry = { itemId: string; inventoryId: string; inventoryName: string; compartmentId: string; latestExpiryDate: string; recordedAtMs: number; source: 'control' | 'correction' }
+      const inventoryNames = new Map(inventoriesSnap.docs.map(d => [d.id, (d.data().name as string) ?? '']))
+      type Entry = { itemId: string; inventoryId: string; inventoryName: string; compartmentId: string; latestExpiryDate: string; comment: string | null; recordedAtMs: number; source: 'control' | 'correction' }
       const entries = new Map<string, Entry>()
       const allControlDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
       for (const chunk of chunkArray(inventoryIds, FIRESTORE_IN_LIMIT)) {
@@ -158,13 +162,17 @@ export const controlesRepository = {
       }
       // Sort oldest first so the most recent control always overwrites previous ones
       allControlDocs.sort((a, b) => (a.data().submittedAt?.toMillis() ?? 0) - (b.data().submittedAt?.toMillis() ?? 0))
+      type StatusEntry = { inventoryId: string; inventoryName: string; compartmentId: string; comment: string | null; controlId: string; recordedAtMs: number }
+      const latestStatus = new Map<string, { status: string } & StatusEntry>()
       for (const doc of allControlDocs) {
         const d = doc.data()
         const recordedAtMs: number = d.submittedAt?.toMillis() ?? 0
         for (const r of d.results ?? []) {
-          if (!r.expiryDate) continue
           const key = `${r.itemId}|${d.inventoryId}`
-          entries.set(key, { itemId: r.itemId, inventoryId: d.inventoryId, inventoryName: d.inventoryName ?? '', compartmentId: r.compartmentId, latestExpiryDate: r.expiryDate, recordedAtMs, source: 'control' })
+          if (r.expiryDate) {
+            entries.set(key, { itemId: r.itemId, inventoryId: d.inventoryId, inventoryName: inventoryNames.get(d.inventoryId) ?? '', compartmentId: r.compartmentId, latestExpiryDate: r.expiryDate, comment: r.comment ?? null, recordedAtMs, source: 'control' })
+          }
+          latestStatus.set(key, { status: r.status, inventoryId: d.inventoryId, inventoryName: inventoryNames.get(d.inventoryId) ?? '', compartmentId: r.compartmentId, comment: r.comment ?? null, controlId: doc.id, recordedAtMs })
         }
       }
       const correctionsSnap = await adminDb.collection('corrections').where('associationId', '==', associationId).get()
@@ -175,7 +183,7 @@ export const controlesRepository = {
         const correctedAtMs: number = d.correctedAt?.toMillis() ?? 0
         // Correction wins only if it is more recent than the last control that recorded a date
         if (!existing || correctedAtMs >= existing.recordedAtMs) {
-          entries.set(key, { itemId: d.itemId, inventoryId: d.inventoryId, inventoryName: existing?.inventoryName ?? '', compartmentId: existing?.compartmentId ?? '', latestExpiryDate: d.newExpiryDate, recordedAtMs: correctedAtMs, source: 'correction' })
+          entries.set(key, { itemId: d.itemId, inventoryId: d.inventoryId, inventoryName: inventoryNames.get(d.inventoryId) ?? '', compartmentId: existing?.compartmentId ?? '', latestExpiryDate: d.newExpiryDate, comment: existing?.comment ?? null, recordedAtMs: correctedAtMs, source: 'correction' })
         }
       }
       const now = startOfToday()
@@ -187,21 +195,62 @@ export const controlesRepository = {
         if (d <= now) expired.push(entry)
         else if (d <= risk) atRisk.push(entry)
       }
-      if (expired.length === 0 && atRisk.length === 0) return ok({ expired: [], atRisk: [] })
-      const allEntries = [...expired, ...atRisk]
+      // Active anomalies: items whose latest control result is 'anomaly', not corrected since
+      let activeAnomalyEntries = [...latestStatus.entries()]
+        .filter(([, e]) => e.status === 'anomaly')
+        .map(([key, e]) => ({ itemId: key.split('|')[0], ...e }))
+      if (activeAnomalyEntries.length > 0) {
+        const anomalyCorrectionsSnap = await adminDb.collection('anomaly_corrections').where('associationId', '==', associationId).get()
+        const latestAnomalyCorrection = new Map<string, number>()
+        for (const doc of anomalyCorrectionsSnap.docs) {
+          const d = doc.data()
+          const key = `${d.itemId}|${d.inventoryId}`
+          const correctedAtMs: number = d.correctedAt?.toMillis() ?? 0
+          if (correctedAtMs > (latestAnomalyCorrection.get(key) ?? 0)) latestAnomalyCorrection.set(key, correctedAtMs)
+        }
+        activeAnomalyEntries = activeAnomalyEntries.filter(a => {
+          const correctedAtMs = latestAnomalyCorrection.get(`${a.itemId}|${a.inventoryId}`) ?? 0
+          return correctedAtMs < a.recordedAtMs
+        })
+      }
+      if (expired.length === 0 && atRisk.length === 0 && activeAnomalyEntries.length === 0) return ok({ anomalies: [], expired: [], atRisk: [] })
+      const allExpiryEntries = [...expired, ...atRisk]
+      const allItemIds = [...new Set([...allExpiryEntries.map(e => e.itemId), ...activeAnomalyEntries.map(e => e.itemId)])]
+      const allCompartmentIds = [...new Set([...allExpiryEntries.filter(e => e.compartmentId).map(e => e.compartmentId), ...activeAnomalyEntries.map(e => e.compartmentId)])]
       const [itemNames, compartmentNames] = await Promise.all([
-        batchGetNames('materiels', [...new Set(allEntries.map(e => e.itemId))]),
-        batchGetNames('emplacements', [...new Set(allEntries.filter(e => e.compartmentId).map(e => e.compartmentId))]),
+        batchGetNames('materiels', allItemIds),
+        batchGetNames('emplacements', allCompartmentIds),
       ])
       const toItem = (e: Entry): ExpiryAlertItem => ({
-        itemId: e.itemId, itemName: itemNames.get(e.itemId) ?? e.itemId,
-        compartmentName: compartmentNames.get(e.compartmentId) ?? e.compartmentId,
+        itemId: e.itemId, itemName: itemNames.get(e.itemId) ?? '(matériel introuvable)',
+        compartmentName: compartmentNames.get(e.compartmentId) ?? '(emplacement introuvable)',
         inventoryId: e.inventoryId, inventoryName: e.inventoryName,
-        latestExpiryDate: e.latestExpiryDate, source: e.source,
+        latestExpiryDate: e.latestExpiryDate, comment: e.comment, source: e.source,
       })
-      return ok({ expired: expired.map(toItem), atRisk: atRisk.map(toItem) })
+      const toAnomalyItem = (e: typeof activeAnomalyEntries[0]): AnomalyAlertItem => ({
+        itemId: e.itemId, itemName: itemNames.get(e.itemId) ?? '(matériel introuvable)',
+        compartmentName: compartmentNames.get(e.compartmentId) ?? '(emplacement introuvable)',
+        inventoryId: e.inventoryId, inventoryName: e.inventoryName,
+        comment: e.comment, controlId: e.controlId,
+      })
+      return ok({ anomalies: activeAnomalyEntries.map(toAnomalyItem), expired: expired.map(toItem), atRisk: atRisk.map(toItem) })
     } catch (error) {
       return err(`Impossible de calculer les alertes. Erreur: ${(error as Error).message}`)
+    }
+  },
+
+  async createAnomalyCorrection(input: CreateAnomalyCorrectionInput): Promise<Result<void>> {
+    try {
+      await adminDb.collection('anomaly_corrections').add({
+        itemId: input.itemId,
+        inventoryId: input.inventoryId,
+        associationId: input.associationId,
+        correctedBy: input.correctedBy,
+        correctedAt: FieldValue.serverTimestamp(),
+      })
+      return ok(undefined)
+    } catch (error) {
+      return err(`Impossible d'enregistrer la correction. Erreur: ${(error as Error).message}`)
     }
   },
 

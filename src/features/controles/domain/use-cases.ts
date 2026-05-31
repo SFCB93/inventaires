@@ -1,7 +1,7 @@
 import { controlesRepository } from '../data/repository'
 import type { Result } from '@/shared/domain/result'
 import { err } from '@/shared/domain/result'
-import type { ControlSummary, ControlDetail, ExpiryAlertReport, CreateCorrectionInput } from './types'
+import type { ControlSummary, ControlDetail, ExpiryAlertReport, CreateCorrectionInput, CreateAnomalyCorrectionInput } from './types'
 import type { AuthenticatedUser } from '@/shared/lib/auth'
 
 export async function listControlsUseCase(associationId: string): Promise<Result<ControlSummary[]>> {
@@ -21,6 +21,14 @@ export async function getActiveExpiryAlertsUseCase(associationId: string, thresh
 
 export async function getAlertThresholdUseCase(associationId: string): Promise<number> {
   return controlesRepository.getAlertThreshold(associationId)
+}
+
+export async function createAnomalyCorrectionUseCase(
+  input: CreateAnomalyCorrectionInput,
+  user: AuthenticatedUser,
+): Promise<Result<void>> {
+  if (input.associationId !== user.associationId) return err('Non autorisé.')
+  return controlesRepository.createAnomalyCorrection(input)
 }
 
 export async function createCorrectionUseCase(

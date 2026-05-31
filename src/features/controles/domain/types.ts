@@ -5,12 +5,31 @@ export type ExpiryAlertItem = {
   inventoryId: string
   inventoryName: string
   latestExpiryDate: string   // ISO YYYY-MM-DD
+  comment: string | null
   source: 'control' | 'correction'
 }
 
+export type AnomalyAlertItem = {
+  itemId: string
+  itemName: string
+  compartmentName: string
+  inventoryId: string
+  inventoryName: string
+  comment: string | null
+  controlId: string
+}
+
 export type ExpiryAlertReport = {
+  anomalies: AnomalyAlertItem[]
   expired: ExpiryAlertItem[]
   atRisk: ExpiryAlertItem[]
+}
+
+export type CreateAnomalyCorrectionInput = {
+  itemId: string
+  inventoryId: string
+  associationId: string
+  correctedBy: string
 }
 
 export type ControlSummary = {

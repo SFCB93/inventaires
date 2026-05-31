@@ -21,7 +21,7 @@ export default async function ControlesPage() {
   return (
     <ControlsListPage
       controls={controlsResult.value}
-      alerts={alertsResult.ok ? alertsResult.value : { expired: [], atRisk: [] }}
+      alerts={alertsResult.ok ? alertsResult.value : { anomalies: [], expired: [], atRisk: [] }}
       alertThresholdDays={alertThresholdDays}
     />
   )

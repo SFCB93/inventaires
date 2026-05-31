@@ -1,14 +1,16 @@
-// Dépasse 100 lignes : cette page combine le bloc alertes, le tableau paginé et la modale de correction.
-// La logique est extraite dans useControlsListPage et useCorrectionModal.
+// Dépasse 100 lignes : cette page combine le bloc alertes, le tableau paginé et les deux modales de correction.
+// La logique est extraite dans useControlsListPage, useCorrectionModal et useAnomalyCorrectionModal.
 'use client'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { ControlSummary, ExpiryAlertReport, ExpiryAlertItem } from '../domain/types'
+import type { ControlSummary, ExpiryAlertReport, ExpiryAlertItem, AnomalyAlertItem } from '../domain/types'
 import { useControlsListPage } from './hooks/useControlsListPage'
 import { useCorrectionModal } from './hooks/useCorrectionModal'
-import { ExpiryAlertsBlock } from './ExpiryAlertsBlock'
+import { useAnomalyCorrectionModal } from './hooks/useAnomalyCorrectionModal'
+import { AnomalyAlertsBlock } from './AnomalyAlertsBlock'
 import { CorrectionModal } from './CorrectionModal'
+import { AnomalyCorrectionModal } from './AnomalyCorrectionModal'
 import { formatDate, formatDateTime } from '@/shared/lib/format'
 
 interface ControlsListPageProps {
@@ -21,20 +23,18 @@ export function ControlsListPage({ controls, alerts, alertThresholdDays }: Contr
   const router = useRouter()
   const { paginatedControls, currentPage, totalPages, goToPage } = useControlsListPage(controls)
   const correction = useCorrectionModal(() => router.refresh(), alertThresholdDays)
-
-  const pendingByInventory = new Map<string, number>()
-  for (const item of [...alerts.expired, ...alerts.atRisk]) {
-    pendingByInventory.set(item.inventoryId, (pendingByInventory.get(item.inventoryId) ?? 0) + 1)
-  }
+  const anomalyCorrection = useAnomalyCorrectionModal(() => router.refresh())
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Contrôles</h1>
 
-      <ExpiryAlertsBlock
+      <AnomalyAlertsBlock
+        anomalies={alerts.anomalies}
         expired={alerts.expired}
         atRisk={alerts.atRisk}
         onCorrect={(item: ExpiryAlertItem) => correction.open(item)}
+        onCorrectAnomaly={(item: AnomalyAlertItem) => anomalyCorrection.open(item)}
       />
 
       {controls.length === 0 ? (
@@ -55,7 +55,6 @@ export function ControlsListPage({ controls, alerts, alertThresholdDays }: Contr
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {paginatedControls.map((control) => {
-                  const pendingCount = pendingByInventory.get(control.inventoryId) ?? 0
                   return (
                   <tr key={control.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-900">
@@ -76,8 +75,8 @@ export function ControlsListPage({ controls, alerts, alertThresholdDays }: Contr
                         : <span className="text-slate-300">—</span>}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {pendingCount > 0
-                        ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{pendingCount}</span>
+                      {control.anomalyCount > 0
+                        ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{control.anomalyCount}</span>
                         : <span className="text-slate-300">—</span>}
                     </td>
                   </tr>
@@ -114,6 +113,16 @@ export function ControlsListPage({ controls, alerts, alertThresholdDays }: Contr
         onDateChange={correction.handleDateChange}
         onConfirm={correction.handleConfirm}
         onClose={correction.close}
+      />
+
+      <AnomalyCorrectionModal
+        isOpen={!!anomalyCorrection.selectedItem}
+        itemName={anomalyCorrection.selectedItem?.itemName ?? ''}
+        comment={anomalyCorrection.selectedItem?.comment ?? null}
+        isSubmitting={anomalyCorrection.isSubmitting}
+        error={anomalyCorrection.error}
+        onConfirm={anomalyCorrection.handleConfirm}
+        onClose={anomalyCorrection.close}
       />
     </div>
   )

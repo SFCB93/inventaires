@@ -15,6 +15,7 @@ const mockItem: ExpiryAlertItem = {
   inventoryId: 'inv-1',
   inventoryName: 'Sac PS',
   latestExpiryDate: '2026-05-01',
+  comment: null,
   source: 'control',
 }
 
