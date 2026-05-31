@@ -202,6 +202,16 @@ Ne jamais court-circuiter ce flux.
     // ✓
     catch (error) { console.error('[foo] opération échouée', error) }
     ```
+11. **Une seule source de vérité pour les noms** — ne jamais dénormaliser un
+    nom dans un document Firestore à côté de son ID. Stocker uniquement l'ID ;
+    dériver le nom au moment de la lecture depuis la collection faisant autorité.
+    ```ts
+    // ✗ — inventoryName devient périmé si l'inventaire est renommé
+    await db.collection('controles').add({ inventoryId, inventoryName, ... })
+    // ✓ — lire le nom depuis inventaires au moment du rendu
+    await db.collection('controles').add({ inventoryId, ... })
+    // puis à la lecture : inventoryNames.get(data.inventoryId)
+    ```
 
 ## Gate Implémentation — Arrêt obligatoire
 
