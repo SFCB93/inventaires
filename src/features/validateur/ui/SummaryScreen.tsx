@@ -42,6 +42,40 @@ export function SummaryScreen({ compartments, results, onSubmit, isSubmitting, e
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="input-verifier-name" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Votre nom <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="input-verifier-name"
+              data-testid="input-verifier-name"
+              type="text"
+              value={verifierName}
+              onChange={(e) => setVerifierName(e.target.value)}
+              placeholder="Prénom Nom"
+              autoComplete="name"
+              className={`w-full h-12 rounded-xl border-2 px-3 text-base focus:outline-none focus:border-blue-500 transition-colors ${nameError ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+            />
+            {nameError && (
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                Votre nom est requis pour soumettre le contrôle.
+              </p>
+            )}
+          </div>
+          {error && (
+            <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>
+          )}
+          <button
+            data-testid="btn-submit"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="w-full h-14 rounded-2xl bg-blue-600 text-white text-base font-semibold shadow-md shadow-blue-100 disabled:opacity-50 active:scale-95 transition-transform"
+          >
+            {isSubmitting ? 'Envoi en cours…' : error ? 'Réessayer' : 'Soumettre le contrôle'}
+          </button>
+        </div>
+
         {compartments.map((compartment) => {
           const compartmentResults = results.filter((r) => r.compartmentId === compartment.id)
           return (
@@ -79,41 +113,6 @@ export function SummaryScreen({ compartments, results, onSubmit, isSubmitting, e
         })}
       </div>
 
-      <div className="px-5 pt-5 pb-10 border-t border-slate-100 bg-white space-y-4">
-        <div>
-          <label htmlFor="input-verifier-name" className="block text-sm font-medium text-slate-700 mb-1.5">
-            Votre nom <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="input-verifier-name"
-            data-testid="input-verifier-name"
-            type="text"
-            value={verifierName}
-            onChange={(e) => setVerifierName(e.target.value)}
-            placeholder="Prénom Nom"
-            autoComplete="name"
-            className={`w-full h-12 rounded-xl border-2 px-3 text-base focus:outline-none focus:border-blue-500 transition-colors ${nameError ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
-          />
-          {nameError && (
-            <p role="alert" className="mt-1.5 text-sm text-red-600">
-              Votre nom est requis pour soumettre le contrôle.
-            </p>
-          )}
-        </div>
-
-        {error && (
-          <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>
-        )}
-
-        <button
-          data-testid="btn-submit"
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full h-14 rounded-2xl bg-blue-600 text-white text-base font-semibold shadow-md shadow-blue-100 disabled:opacity-50 active:scale-95 transition-transform"
-        >
-          {isSubmitting ? 'Envoi en cours…' : error ? 'Réessayer' : 'Soumettre le contrôle'}
-        </button>
-      </div>
     </div>
   )
 }
