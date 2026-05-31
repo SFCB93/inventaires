@@ -15,7 +15,7 @@ export async function submitControlAction(
   const assocResult = await validatorRepository.getInventoryAssociationId(submission.inventoryId)
   const associationId = assocResult.ok ? assocResult.value : ''
 
-  const result = await submitControlUseCase(submission, emailContext.inventoryName, associationId)
+  const result = await submitControlUseCase(submission, associationId)
   if (!result.ok) return result
 
   // Non-blocking: email failure does not fail the control

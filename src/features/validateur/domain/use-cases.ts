@@ -12,10 +12,9 @@ export async function loadInventoryUseCase(
 
 export async function submitControlUseCase(
   submission: ControlSubmission,
-  inventoryName: string,
   associationId: string,
 ): Promise<Result<{ controlId: string }>> {
   if (!submission.verifierName.trim()) return err('Le nom du vérificateur est obligatoire.')
   if (submission.results.length === 0) return err('Le contrôle ne contient aucun résultat.')
-  return validatorRepository.saveControl(submission, inventoryName, associationId)
+  return validatorRepository.saveControl(submission, associationId)
 }

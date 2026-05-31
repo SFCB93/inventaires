@@ -75,19 +75,19 @@ describe('submitControlUseCase', () => {
   })
 
   it("retourne le controlId après une soumission réussie", async () => {
-    const result = await submitControlUseCase(mockSubmission, 'VSL 42', 'asso-1')
+    const result = await submitControlUseCase(mockSubmission, 'asso-1')
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.value.controlId).toBe('ctrl-1')
   })
 
   it("retourne une erreur si le nom du vérificateur est vide", async () => {
-    const result = await submitControlUseCase({ ...mockSubmission, verifierName: '   ' }, 'VSL 42', 'asso-1')
+    const result = await submitControlUseCase({ ...mockSubmission, verifierName: '   ' }, 'asso-1')
     expect(result.ok).toBe(false)
     expect(validatorRepository.saveControl).not.toHaveBeenCalled()
   })
 
   it("retourne une erreur si les résultats sont vides", async () => {
-    const result = await submitControlUseCase({ ...mockSubmission, results: [] }, 'VSL 42', 'asso-1')
+    const result = await submitControlUseCase({ ...mockSubmission, results: [] }, 'asso-1')
     expect(result.ok).toBe(false)
     expect(validatorRepository.saveControl).not.toHaveBeenCalled()
   })
@@ -97,7 +97,7 @@ describe('submitControlUseCase', () => {
       ok: false,
       error: "Impossible d'enregistrer le contrôle.",
     })
-    const result = await submitControlUseCase(mockSubmission, 'VSL 42', 'asso-1')
+    const result = await submitControlUseCase(mockSubmission, 'asso-1')
     expect(result.ok).toBe(false)
   })
 })

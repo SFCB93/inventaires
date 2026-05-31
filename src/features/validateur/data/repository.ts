@@ -102,13 +102,11 @@ export const validatorRepository = {
 
   async saveControl(
     submission: ControlSubmission,
-    inventoryName: string,
     associationId: string,
   ): Promise<Result<{ controlId: string }>> {
     try {
       const ref = await adminDb.collection("controles").add({
         inventoryId: submission.inventoryId,
-        inventoryName,
         associationId,
         verifierName: submission.verifierName,
         submittedAt: FieldValue.serverTimestamp(),
