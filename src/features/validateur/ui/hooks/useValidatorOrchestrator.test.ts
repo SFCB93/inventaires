@@ -78,6 +78,44 @@ describe('useValidatorOrchestrator — avancement', () => {
   })
 })
 
+describe('useValidatorOrchestrator — retour arrière', () => {
+  beforeEach(() => {
+    useValidatorStore.getState().init('')
+    vi.clearAllMocks()
+  })
+
+  it("canGoBack est false sur le premier item", () => {
+    const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartments))
+    expect(result.current.canGoBack).toBe(false)
+  })
+
+  it("canGoBack est true après avoir avancé d'un item", () => {
+    const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartments))
+    act(() => { result.current.recordResult({ status: 'present' }) })
+    expect(result.current.canGoBack).toBe(true)
+  })
+
+  it("revient à l'item précédent dans le même emplacement et efface son résultat", () => {
+    const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartments))
+    act(() => { result.current.recordResult({ status: 'present' }) })
+    expect(result.current.currentItem?.id).toBe('mat-2')
+    act(() => { result.current.goBack() })
+    expect(result.current.currentItem?.id).toBe('mat-1')
+    expect(result.current.results).toHaveLength(0)
+  })
+
+  it("revient au dernier item de l'emplacement précédent depuis le premier item d'un emplacement", () => {
+    const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartments))
+    act(() => { result.current.recordResult({ status: 'present' }) })
+    act(() => { result.current.recordResult({ status: 'present' }) })
+    expect(result.current.currentCompartment?.id).toBe('emp-2')
+    act(() => { result.current.goBack() })
+    expect(result.current.currentCompartment?.id).toBe('emp-1')
+    expect(result.current.currentItem?.id).toBe('mat-2')
+    expect(result.current.results).toHaveLength(1)
+  })
+})
+
 describe('useValidatorOrchestrator — soumission et retry', () => {
   beforeEach(() => {
     useValidatorStore.getState().init('')
@@ -85,7 +123,7 @@ describe('useValidatorOrchestrator — soumission et retry', () => {
   })
 
   it('conserve les résultats après un échec de soumission (retry possible)', async () => {
-    vi.mocked(submitControlAction).mockResolvedValue({ ok: false, error: 'Erreur réseau' })
+    vi.mocked(submitControlAction).mockResolvedValue({ ok: false, error: 'Erreur réseau' } as any)
     const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartments))
 
     act(() => { result.current.recordResult({ status: 'present' }) })
@@ -99,8 +137,8 @@ describe('useValidatorOrchestrator — soumission et retry', () => {
     expect(result.current.step).toBe('summary')
   })
 
-  it("passe à l'étape confirmation après une soumission réussie", async () => {
-    vi.mocked(submitControlAction).mockResolvedValue({ ok: true, value: undefined })
+  it("passe à l'étape rating après une soumission réussie", async () => {
+    vi.mocked(submitControlAction).mockResolvedValue({ ok: true, value: { controlId: 'ctrl-1' } })
     const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartments))
 
     act(() => { result.current.recordResult({ status: 'present' }) })
@@ -109,7 +147,7 @@ describe('useValidatorOrchestrator — soumission et retry', () => {
 
     await act(async () => { await result.current.handleSubmit('Jean Dupont') })
 
-    expect(result.current.step).toBe('confirmation')
+    expect(result.current.step).toBe('rating')
     expect(result.current.submissionError).toBeUndefined()
   })
 })
