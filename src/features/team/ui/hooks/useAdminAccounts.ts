@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { inviteAdminAction, removeAdminAction, sendPasswordResetAction } from '../../domain/actions'
+import { inviteAdminAction, removeAdminAction } from '../../domain/actions'
 import type { AdminAccount } from '../../domain/types'
 
 export function useAdminAccounts(initialAccounts: AdminAccount[]) {
@@ -13,9 +13,6 @@ export function useAdminAccounts(initialAccounts: AdminAccount[]) {
   const [inviteSuccess, setInviteSuccess] = useState(false)
   const [removingUid, setRemovingUid] = useState<string | null>(null)
   const [removeError, setRemoveError] = useState<string | undefined>()
-  const [isResetting, setIsResetting] = useState(false)
-  const [resetSuccess, setResetSuccess] = useState(false)
-  const [resetError, setResetError] = useState<string | undefined>()
 
   async function handleInvite() {
     setIsInviting(true)
@@ -38,22 +35,12 @@ export function useAdminAccounts(initialAccounts: AdminAccount[]) {
     setAccounts((prev) => prev.filter((a) => a.uid !== uid))
   }
 
-  async function handlePasswordReset() {
-    setIsResetting(true)
-    setResetError(undefined)
-    setResetSuccess(false)
-    const result = await sendPasswordResetAction()
-    setIsResetting(false)
-    if (!result.ok) { setResetError(result.error); return }
-    setResetSuccess(true)
-  }
-
   function openInvite() { setShowInvite(true); setInviteError(undefined); setInviteSuccess(false) }
   function cancelInvite() { setShowInvite(false); setInviteEmail(''); setInviteError(undefined) }
 
   return {
     accounts, showInvite, inviteEmail, setInviteEmail, isInviting, inviteError, inviteSuccess,
-    removingUid, removeError, isResetting, resetSuccess, resetError,
-    handleInvite, handleRemove, handlePasswordReset, openInvite, cancelInvite,
+    removingUid, removeError,
+    handleInvite, handleRemove, openInvite, cancelInvite,
   }
 }

@@ -12,8 +12,8 @@ interface AdminAccountsSectionProps {
 export function AdminAccountsSection({ initialAccounts, currentUserUid }: AdminAccountsSectionProps) {
   const {
     accounts, showInvite, inviteEmail, setInviteEmail, isInviting, inviteError, inviteSuccess,
-    removingUid, removeError, isResetting, resetSuccess, resetError,
-    handleInvite, handleRemove, handlePasswordReset, openInvite, cancelInvite,
+    removingUid, removeError,
+    handleInvite, handleRemove, openInvite, cancelInvite,
   } = useAdminAccounts(initialAccounts)
 
   return (
@@ -72,20 +72,6 @@ export function AdminAccountsSection({ initialAccounts, currentUserUid }: AdminA
       {inviteSuccess && (
         <p className="mt-2 text-xs text-green-600">Invitation envoyée.</p>
       )}
-
-      <div className="mt-6 pt-4 border-t border-slate-100">
-        <button
-          type="button"
-          data-testid="btn-password-reset"
-          onClick={handlePasswordReset}
-          disabled={isResetting}
-          className="text-sm text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
-        >
-          {isResetting ? 'Envoi en cours…' : 'Changer mon mot de passe'}
-        </button>
-        {resetSuccess && <p className="mt-1 text-xs text-green-600">Un lien a été envoyé à votre adresse email.</p>}
-        {resetError && <p role="alert" className="mt-1 text-xs text-red-600">{resetError}</p>}
-      </div>
     </section>
   )
 }

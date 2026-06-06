@@ -5,10 +5,14 @@ interface NotificationEmailsEditorProps {
   onNewEmailChange: (v: string) => void
   onAdd: () => void
   onRemove: (email: string) => void
+  isSaving?: boolean
+  saveError?: string
+  saveSuccess?: boolean
 }
 
 export function NotificationEmailsEditor({
   emails, newEmail, emailError, onNewEmailChange, onAdd, onRemove,
+  isSaving, saveError, saveSuccess,
 }: NotificationEmailsEditorProps) {
   return (
     <div className="space-y-3">
@@ -55,6 +59,15 @@ export function NotificationEmailsEditor({
 
       {emailError && (
         <p role="alert" className="text-sm text-red-600">{emailError}</p>
+      )}
+      {isSaving && (
+        <p className="text-sm text-slate-400">Enregistrement…</p>
+      )}
+      {saveError && (
+        <p role="alert" className="text-sm text-red-600">{saveError}</p>
+      )}
+      {saveSuccess && !isSaving && (
+        <p className="text-sm text-green-600">Enregistré.</p>
       )}
     </div>
   )

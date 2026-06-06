@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getAuthenticatedUser } from '@/shared/lib/auth'
-import { leaveAssociationAction } from '@/features/gestion-comptes/domain/actions'
-import { getAssociationSettingsUseCase } from '@/features/gestion-comptes/domain/use-cases'
+import { leaveAssociationAction } from '@/features/superadmin/domain/actions'
+import { getAssociationSettingsUseCase } from '@/features/settings/domain/use-cases'
 import { DashboardNav } from './DashboardNav'
 
 export default async function BackofficeLayout({ children }: { children: React.ReactNode }) {

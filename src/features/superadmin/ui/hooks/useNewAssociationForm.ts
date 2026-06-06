@@ -23,7 +23,7 @@ export function useNewAssociationForm(onSuccess: () => void) {
     setError(undefined)
     const result = await createAssociationAction({ name, adminEmail: email })
     setIsSubmitting(false)
-    if (result.error) { setError(result.error); return }
+    if (!result.ok) { setError(result.error); return }
     close()
     onSuccess()
   }

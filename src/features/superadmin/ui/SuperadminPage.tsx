@@ -6,11 +6,11 @@ import { useNewAssociationForm } from './hooks/useNewAssociationForm'
 import { NewAssociationForm } from './NewAssociationForm'
 import { enterAssociationAction } from '../domain/actions'
 
-interface AdminPageProps {
+interface SuperadminPageProps {
   associations: AssociationSummary[]
 }
 
-export function AdminPage({ associations }: AdminPageProps) {
+export function SuperadminPage({ associations }: SuperadminPageProps) {
   const router = useRouter()
   const form = useNewAssociationForm(() => router.refresh())
 

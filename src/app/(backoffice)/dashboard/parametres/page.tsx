@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { getAuthenticatedUser } from '@/shared/lib/auth'
-import { getAssociationSettingsUseCase, listAdminAccountsUseCase } from '@/features/gestion-comptes/domain/use-cases'
-import { ParametresPage } from '@/features/gestion-comptes/ui/ParametresPage'
+import { getAssociationSettingsUseCase } from '@/features/settings/domain/use-cases'
+import { listAdminAccountsUseCase } from '@/features/team/domain/use-cases'
+import { SettingsPage } from '@/features/settings/ui/SettingsPage'
 
 export default async function ParametresRoute() {
   const user = await getAuthenticatedUser()
@@ -15,7 +16,7 @@ export default async function ParametresRoute() {
   if (!settingsResult.ok) return <p className="text-red-600 p-8">{settingsResult.error}</p>
 
   return (
-    <ParametresPage
+    <SettingsPage
       settings={settingsResult.value}
       adminAccounts={accountsResult.ok ? accountsResult.value : []}
       currentUserUid={user.uid}
