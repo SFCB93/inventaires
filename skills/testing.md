@@ -1,3 +1,13 @@
+---
+name: testing
+description: >
+  Testing philosophy and patterns for Vitest, Testing Library, and Playwright in this project.
+  Use whenever writing or modifying tests — unit tests for use cases, component tests, or E2E specs.
+  Consult before deciding what to test, how to structure mocks, or whether a behaviour deserves
+  a test at all. Also reference when choosing between userEvent and fireEvent, or when
+  mocking Next.js or Firebase modules.
+---
+
 # Skill — Testing
 
 ## Philosophie

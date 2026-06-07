@@ -1,3 +1,13 @@
+---
+name: nextjs
+description: >
+  Next.js 15 App Router conventions for this project. Use whenever working on a page,
+  layout, route, Server Action, or Server Component — or deciding whether something
+  should be a Server or Client Component. Also use when adding a new route,
+  modifying middleware, setting up data fetching, or unsure whether to use
+  a Server Action vs. an API route. Read this before touching app/ or any actions.ts.
+---
+
 # Skill — Next.js 15 (App Router)
 
 ## Conventions de routing

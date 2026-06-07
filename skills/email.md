@@ -1,3 +1,12 @@
+---
+name: email
+description: >
+  Resend + react-email patterns for sending transactional emails in this project.
+  Use whenever creating or modifying email templates, adding email sending to a use case,
+  or setting up a new cron-triggered alert. Also reference when debugging email delivery,
+  previewing templates in dev, or checking where email calls belong in the architecture.
+---
+
 # Skill — Email (Resend + react-email)
 
 ## Setup
@@ -101,7 +110,7 @@ export async function sendControlCompletedEmail(
   params: SendControlCompletedParams
 ): Promise<Result<void>> {
   try {
-    const html = render(
+    const html = await render(
       ControlCompletedEmail({
         inventoryName: params.inventoryName,
         verifierName: params.verifierName,
@@ -129,36 +138,37 @@ export async function sendControlCompletedEmail(
 
 ## Où appeler les services mail
 
-**Uniquement dans les Server Actions ou les API routes.**
-Jamais côté client.
+**Dans les use cases, via le service d'email. Jamais dans les actions, jamais côté client.**
+
+L'email est un side effect de l'opération principale — il appartient donc au use case.
+L'appel est non-bloquant : une erreur d'envoi ne doit pas faire échouer la soumission.
 
 ```ts
-// features/validator/domain/actions.ts
-'use server'
+// features/validator/domain/use-cases.ts
+export async function submitControlUseCase(
+  submission: ControlSubmission,
+  emailContext: ControlEmailContext,
+): Promise<Result<{ controlId: string }>> {
+  // ... validation, récupération contexte ...
 
-import { ok } from '@/shared/domain/result'
-import type { Result } from '@/shared/domain/result'
-import { submitControlUseCase } from './use-cases'
-import { sendControlCompletedEmail } from './email-service'
-import { validatorRepository } from '../data/repository'
-
-export async function submitControlAction(/* ... */): Promise<Result<{ controlId: string }>> {
-  const result = await submitControlUseCase(/* ... */)
+  const result = await validatorRepository.saveControl(submission, associationId)
   if (!result.ok) return result
 
-  // Mail non-bloquant : une erreur d'envoi ne fait pas échouer la soumission
-  const { emails } = await validatorRepository.getAssociationEmails(result.value.associationId)
-  if (emails.length > 0) {
-    await sendControlCompletedEmail({
-      recipients: emails,
-      inventoryName: result.value.inventoryName,
-      verifierName: result.value.verifierName,
-      controlDate: new Date().toLocaleDateString('fr-FR'),
-      anomalies: result.value.anomalies,
-    })
-  }
+  // Mail non-bloquant : une erreur ne fait pas échouer la soumission
+  sendControlCompletedEmail({ /* ... */ }).catch((e) =>
+    console.error('[submitControlUseCase] email failure', e)
+  )
 
-  return ok({ controlId: result.value.controlId })
+  return result
+}
+
+// features/validator/domain/actions.ts — coquille, aucune logique
+'use server'
+export async function submitControlAction(
+  submission: ControlSubmission,
+  emailContext: ControlEmailContext,
+): Promise<Result<{ controlId: string }>> {
+  return submitControlUseCase(submission, emailContext)
 }
 ```
 
@@ -178,7 +188,7 @@ Permet de visualiser les templates dans le navigateur sans envoyer de vrai mail.
 
 ## Alertes péremption
 
-Même pattern. Créer un template `PeremptionImminente.tsx` et un service dédié.
+Même pattern. Créer un template `ExpiryAlertEmail.tsx` et un service dédié.
 L'envoi se fait via un cron job (Vercel Cron ou GitHub Actions) qui appelle
 une API route protégée :
 
@@ -201,5 +211,6 @@ export async function GET(request: Request) {
 
 - ❌ Appeler `resend.emails.send` côté client
 - ❌ Mettre la clé API Resend dans une variable `NEXT_PUBLIC_*`
-- ❌ Envoyer les mails directement dans les use cases (passer par le service)
+- ❌ Appeler `resend.emails.send` directement depuis un use case — passer par le service d'email
+- ❌ Déclencher l'envoi depuis une action — l'email appartient au use case
 - ❌ Oublier le `try/catch` — Resend peut échouer, ne pas bloquer le flux principal

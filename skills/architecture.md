@@ -2,8 +2,11 @@
 name: architecture
 description: >
   Clean architecture and SOLID principles on the Next.js 15 + Firestore + Zustand stack.
-  Read before any structural change: adding a feature, splitting a file, moving logic,
-  or deciding where a new responsibility belongs.
+  Use this skill whenever you are adding a feature, creating a use case, repository,
+  action, or hook, moving logic between layers, or deciding where a responsibility belongs.
+  Also use it when you spot a dependency going the wrong direction, an action doing too much,
+  a repository containing business logic, or a cross-feature import.
+  When in doubt about "where does this go?" — read this first.
 ---
 
 # Skill — Architecture

@@ -1,3 +1,12 @@
+---
+name: firestore
+description: >
+  Firestore Admin SDK patterns, collection schema, and query conventions for this project.
+  Use whenever touching any data layer: creating or modifying a repository, writing Firestore
+  queries, doing batch operations, or verifying collection structure. Always consult before
+  adding a new collection or field, or before running queries with 'in' / batch writes.
+---
+
 # Skill — Firestore
 
 ## SDK utilisé : Firebase Admin uniquement
@@ -35,6 +44,8 @@ associations/
   {assocId}/
     name: string
     notificationEmails: string[]
+    alertThresholdDays?: number     # jours avant péremption → alerte (défaut: constante partagée)
+    alertIntervalDays?: number      # délai minimal entre deux alertes pour le même matériel
 
 inventaires/
   {inventaireId}/
@@ -65,7 +76,7 @@ controles/
     results: Array<{
       itemId: string
       compartmentId: string
-      status: 'ok' | 'anomaly'
+      status: 'present' | 'anomaly'
       comment: string | null
       expiryDate: string | null    # format ISO 'YYYY-MM-DD'
     }>
@@ -75,7 +86,16 @@ corrections/
     associationId: string
     inventoryId: string
     itemId: string
-    expiryDate: string             # format ISO 'YYYY-MM-DD'
+    newExpiryDate: string          # format ISO 'YYYY-MM-DD'
+    correctedBy: string
+    correctedAt: Timestamp
+
+anomaly_corrections/
+  {correctionId}/
+    associationId: string
+    inventoryId: string
+    itemId: string
+    correctedBy: string
     correctedAt: Timestamp
 ```
 
