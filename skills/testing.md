@@ -101,7 +101,7 @@ import '@testing-library/jest-dom'
 Mocker les repositories. Tester les règles métier, pas le code.
 
 ```ts
-// features/validateur/domain/use-cases.test.ts
+// features/validator/domain/use-cases.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { submitControlUseCase } from './use-cases'
 import { validatorRepository } from '../data/repository'
@@ -188,7 +188,7 @@ Annoter chaque test avec la règle spec qu'il couvre.
 
 ```
 features/
-  validateur/
+  validator/
     domain/
       use-cases.ts
       use-cases.test.ts   ← règles métier des use cases
@@ -197,7 +197,7 @@ features/
       AnomalyModal.test.tsx  ← comportements non triviaux seulement
 
 e2e/
-  validateur.spec.ts      ← parcours critiques
+  validator.spec.ts      ← parcours critiques
 ```
 
 ---

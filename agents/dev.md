@@ -35,16 +35,16 @@ Ne pas créer si modifier suffit. Ne pas laisser en place ce que la nouvelle imp
 ### 1. Types domaine
 ```ts
 // features/[feature]/domain/types.ts
-export interface Sac {
+export interface Bag {
   id: string
-  nom: string
+  name: string
   description: string
   createdAt: Date
   updatedAt: Date
 }
 
-export interface CreateSacDto {
-  nom: string
+export interface CreateBagDto {
+  name: string
   description: string
 }
 ```
@@ -53,19 +53,19 @@ export interface CreateSacDto {
 ```ts
 // features/[feature]/domain/use-cases.ts
 import type { Result } from '@/shared/domain/result'
-import { sacsRepository } from '../data/repository'
-import type { Sac, CreateSacDto } from './types'
+import { bagsRepository } from '../data/repository'
+import type { Bag, CreateBagDto } from './types'
 
-export async function createSacUseCase(dto: CreateSacDto): Promise<Result<Sac>> {
-  if (!dto.nom.trim()) {
-    return { ok: false, error: 'Le nom du sac est obligatoire' }
+export async function createBagUseCase(dto: CreateBagDto): Promise<Result<Bag>> {
+  if (!dto.name.trim()) {
+    return { ok: false, error: 'Le nom est obligatoire' }
   }
 
-  return sacsRepository.create(dto)
+  return bagsRepository.create(dto)
 }
 
-export async function getSacsUseCase(): Promise<Result<Sac[]>> {
-  return sacsRepository.getAll()
+export async function getBagsUseCase(): Promise<Result<Bag[]>> {
+  return bagsRepository.getAll()
 }
 ```
 
@@ -86,15 +86,15 @@ Un repository par feature. Toujours try/catch, toujours Result<T>.
 import { ok } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
 import { revalidatePath } from 'next/cache'
-import { createSacUseCase } from './use-cases'
+import { createBagUseCase } from './use-cases'
 
-export async function createSacAction(formData: FormData): Promise<Result<void>> {
-  const result = await createSacUseCase({
-    nom: formData.get('nom') as string,
+export async function createBagAction(formData: FormData): Promise<Result<void>> {
+  const result = await createBagUseCase({
+    name: formData.get('name') as string,
     description: formData.get('description') as string,
   })
   if (!result.ok) return result
-  revalidatePath('/dashboard/sacs')
+  revalidatePath('/dashboard/bags')
   return ok(undefined)
 }
 ```
@@ -104,25 +104,25 @@ Injecter la logique dans les composants via des hooks ou des pages
 Server Component :
 
 ```tsx
-// features/[feature]/ui/use-sacs.ts
+// features/[feature]/ui/hooks/useCreateBag.ts
 'use client'
 import { useState } from 'react'
-import { createSacAction } from '../domain/actions'
+import { createBagAction } from '../domain/actions'
 
-export function useCreerSac() {
+export function useCreateBag() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function creerSac(formData: FormData) {
+  async function createBag(formData: FormData) {
     setLoading(true)
     setError(null)
-    const result = await createSacAction(formData)
+    const result = await createBagAction(formData)
     setLoading(false)
     if (!result.ok) setError(result.error)
     return result
   }
 
-  return { creerSac, loading, error }
+  return { createBag, loading, error }
 }
 ```
 
@@ -131,21 +131,21 @@ Uniquement si l'état doit être partagé entre plusieurs composants
 sans relation parent/enfant directe.
 
 ```ts
-// features/inventaire/ui/store.ts
+// features/validator/ui/store.ts
 import { create } from 'zustand'
 
-interface InventaireStore {
-  indexCourant: number
-  avancer: () => void
-  reculer: () => void
+interface ValidatorStore {
+  currentIndex: number
+  advance: () => void
+  goBack: () => void
   reset: () => void
 }
 
-export const useInventaireStore = create<InventaireStore>((set) => ({
-  indexCourant: 0,
-  avancer: () => set((s) => ({ indexCourant: s.indexCourant + 1 })),
-  reculer: () => set((s) => ({ indexCourant: Math.max(0, s.indexCourant - 1) })),
-  reset: () => set({ indexCourant: 0 }),
+export const useValidatorStore = create<ValidatorStore>((set) => ({
+  currentIndex: 0,
+  advance: () => set((s) => ({ currentIndex: s.currentIndex + 1 })),
+  goBack: () => set((s) => ({ currentIndex: Math.max(0, s.currentIndex - 1) })),
+  reset: () => set({ currentIndex: 0 }),
 }))
 ```
 

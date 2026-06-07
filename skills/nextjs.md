@@ -51,19 +51,19 @@ Utiliser les Server Actions pour les mutations (create, update, delete).
 Ne pas créer de route API REST pour ça.
 
 ```ts
-// features/sacs/domain/actions.ts
+// features/bags/domain/actions.ts
 'use server'
 
 import { ok } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
-import { createSacUseCase } from './use-cases'
+import { createBagUseCase } from './use-cases'
 import { revalidatePath } from 'next/cache'
 
-export async function createSacAction(formData: FormData): Promise<Result<void>> {
-  const nom = formData.get('nom') as string
-  const result = await createSacUseCase({ nom })
+export async function createBagAction(formData: FormData): Promise<Result<void>> {
+  const name = formData.get('name') as string
+  const result = await createBagUseCase({ name })
   if (!result.ok) return result
-  revalidatePath('/dashboard/sacs')
+  revalidatePath('/dashboard/bags')
   return ok(undefined)
 }
 ```
@@ -79,13 +79,13 @@ Fetcher dans les Server Components via les use cases directement
 (pas de fetch HTTP interne) :
 
 ```ts
-// app/(backoffice)/dashboard/sacs/page.tsx
-import { getSacsUseCase } from '@/features/sacs/domain/use-cases'
+// app/(backoffice)/dashboard/bags/page.tsx
+import { getBagsUseCase } from '@/features/bags/domain/use-cases'
 
-export default async function SacsPage() {
-  const result = await getSacsUseCase()
+export default async function BagsPage() {
+  const result = await getBagsUseCase()
   if (!result.ok) return <ErrorState message={result.error} />
-  return <SacsListe sacs={result.value} />
+  return <BagsList bags={result.value} />
 }
 ```
 
@@ -108,8 +108,8 @@ export default async function SacsPage() {
 | Server Action | `actions.ts` | `features/sacs/domain/actions.ts` |
 | Use case | `use-cases.ts` | `features/sacs/domain/use-cases.ts` |
 | Repository | `repository.ts` | `features/sacs/data/repository.ts` |
-| Hook | `use-[nom].ts` | `features/sacs/ui/use-sacs.ts` |
-| Composant | PascalCase | `features/sacs/ui/SacCard.tsx` |
+| Hook | `use-[name].ts` | `features/bags/ui/hooks/useBags.ts` |
+| Composant | PascalCase | `features/bags/ui/BagCard.tsx` |
 
 ---
 

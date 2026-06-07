@@ -57,20 +57,20 @@ Si un composant est générique (bouton, badge, modal...), le créer dans
 ## Exemple de composant coquille
 
 ```tsx
-// features/inventaire/ui/BoutonValidation.tsx
+// features/validator/ui/ValidationButtons.tsx
 'use client'
 
-interface BoutonValidationProps {
+interface ValidationButtonsProps {
   onPresent: () => void
-  onAnomalie: () => void
+  onAnomaly: () => void
   disabled?: boolean
 }
 
-export function BoutonValidation({
+export function ValidationButtons({
   onPresent,
-  onAnomalie,
+  onAnomaly,
   disabled = false,
-}: BoutonValidationProps) {
+}: ValidationButtonsProps) {
   return (
     <div className="flex gap-3 w-full px-4 pb-6">
       <button
@@ -85,8 +85,8 @@ export function BoutonValidation({
       </button>
 
       <button
-        data-testid="btn-anomalie"
-        onClick={onAnomalie}
+        data-testid="btn-anomaly"
+        onClick={onAnomaly}
         disabled={disabled}
         className="flex-1 h-14 rounded-2xl bg-amber-500 text-white text-lg font-semibold
                    disabled:opacity-50 active:scale-95 transition-transform"

@@ -60,7 +60,6 @@ controles/
   {controleId}/
     associationId: string
     inventoryId: string
-    inventoryName: string
     verifierName: string
     submittedAt: Timestamp
     results: Array<{

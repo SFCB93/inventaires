@@ -20,24 +20,24 @@ Les templates vivent dans `emails/`. Ce sont des composants React
 qui génèrent du HTML email-compatible.
 
 ```tsx
-// emails/InventaireTermine.tsx
+// emails/ControlCompleted.tsx
 import {
   Html, Head, Body, Container, Heading, Text, Section, Hr
 } from '@react-email/components'
 
 interface Props {
-  sacNom: string
-  secouristeNom: string
-  dateInventaire: string
-  nbAnomalies: number
-  anomalies: { materielNom: string; commentaire: string }[]
+  inventoryName: string
+  verifierName: string
+  controlDate: string
+  anomalyCount: number
+  anomalies: { itemName: string; comment: string }[]
 }
 
-export function InventaireTermineEmail({
-  sacNom,
-  secouristeNom,
-  dateInventaire,
-  nbAnomalies,
+export function ControlCompletedEmail({
+  inventoryName,
+  verifierName,
+  controlDate,
+  anomalyCount,
   anomalies,
 }: Props) {
   return (
@@ -45,22 +45,22 @@ export function InventaireTermineEmail({
       <Head />
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f4f4f5' }}>
         <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '24px' }}>
-          <Heading>Inventaire terminé — {sacNom}</Heading>
+          <Heading>Contrôle terminé — {inventoryName}</Heading>
 
           <Text>
-            <strong>{secouristeNom}</strong> a réalisé un inventaire
-            du sac <strong>{sacNom}</strong> le {dateInventaire}.
+            <strong>{verifierName}</strong> a réalisé un contrôle
+            de <strong>{inventoryName}</strong> le {controlDate}.
           </Text>
 
-          {nbAnomalies > 0 ? (
+          {anomalyCount > 0 ? (
             <Section>
               <Hr />
               <Heading as="h2">
-                ⚠ {nbAnomalies} anomalie{nbAnomalies > 1 ? 's' : ''} signalée{nbAnomalies > 1 ? 's' : ''}
+                ⚠ {anomalyCount} anomalie{anomalyCount > 1 ? 's' : ''} signalée{anomalyCount > 1 ? 's' : ''}
               </Heading>
               {anomalies.map((a, i) => (
                 <Text key={i}>
-                  <strong>{a.materielNom}</strong> — {a.commentaire}
+                  <strong>{a.itemName}</strong> — {a.comment}
                 </Text>
               ))}
             </Section>
@@ -82,44 +82,45 @@ Encapsuler l'envoi dans un service dans `shared/lib/` ou dans
 le domaine de la feature concernée.
 
 ```ts
-// features/inventaires/domain/email-service.ts
+// features/validator/domain/email-service.ts
 import { resend } from '@/shared/lib/resend'
 import { render } from '@react-email/render'
-import { InventaireTermineEmail } from '@/emails/InventaireTermine'
+import { ControlCompletedEmail } from '@/emails/ControlCompleted'
+import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
 
-interface EnvoyerAlertInventaireParams {
-  destinataires: string[]
-  sacNom: string
-  secouristeNom: string
-  dateInventaire: string
-  anomalies: { materielNom: string; commentaire: string }[]
+interface SendControlCompletedParams {
+  recipients: string[]
+  inventoryName: string
+  verifierName: string
+  controlDate: string
+  anomalies: { itemName: string; comment: string }[]
 }
 
-export async function envoyerAlertInventaire(
-  params: EnvoyerAlertInventaireParams
+export async function sendControlCompletedEmail(
+  params: SendControlCompletedParams
 ): Promise<Result<void>> {
   try {
     const html = render(
-      InventaireTermineEmail({
-        sacNom: params.sacNom,
-        secouristeNom: params.secouristeNom,
-        dateInventaire: params.dateInventaire,
-        nbAnomalies: params.anomalies.length,
+      ControlCompletedEmail({
+        inventoryName: params.inventoryName,
+        verifierName: params.verifierName,
+        controlDate: params.controlDate,
+        anomalyCount: params.anomalies.length,
         anomalies: params.anomalies,
       })
     )
 
     await resend.emails.send({
       from: 'Secourisme <noreply@votredomaine.fr>',
-      to: params.destinataires,
-      subject: `Inventaire terminé — ${params.sacNom}`,
+      to: params.recipients,
+      subject: `Contrôle terminé — ${params.inventoryName}`,
       html,
     })
 
-    return { ok: true, value: undefined }
-  } catch (e) {
-    return { ok: false, error: "Échec de l'envoi de l'alerte mail" }
+    return ok(undefined)
+  } catch (error) {
+    return err(`Échec de l'envoi de l'alerte mail : ${(error as Error).message}`)
   }
 }
 ```
@@ -132,29 +133,32 @@ export async function envoyerAlertInventaire(
 Jamais côté client.
 
 ```ts
-// features/inventaires/domain/actions.ts
+// features/validator/domain/actions.ts
 'use server'
 
-import { terminerInventaireUseCase } from './use-cases'
-import { envoyerAlertInventaire } from './email-service'
-import { getResponsablesUseCase } from '@/features/responsables/domain/use-cases'
+import { ok } from '@/shared/domain/result'
+import type { Result } from '@/shared/domain/result'
+import { submitControlUseCase } from './use-cases'
+import { sendControlCompletedEmail } from './email-service'
+import { validatorRepository } from '../data/repository'
 
-export async function terminerInventaireAction(inventaireId: string) {
-  const result = await terminerInventaireUseCase(inventaireId)
-  if (!result.ok) return { error: result.error }
+export async function submitControlAction(/* ... */): Promise<Result<{ controlId: string }>> {
+  const result = await submitControlUseCase(/* ... */)
+  if (!result.ok) return result
 
-  const responsables = await getResponsablesUseCase()
-  if (responsables.ok) {
-    await envoyerAlertInventaire({
-      destinataires: responsables.value.map(r => r.email),
-      sacNom: result.value.sacNom,
-      secouristeNom: result.value.secouristeNom,
-      dateInventaire: new Date().toLocaleDateString('fr-FR'),
+  // Mail non-bloquant : une erreur d'envoi ne fait pas échouer la soumission
+  const { emails } = await validatorRepository.getAssociationEmails(result.value.associationId)
+  if (emails.length > 0) {
+    await sendControlCompletedEmail({
+      recipients: emails,
+      inventoryName: result.value.inventoryName,
+      verifierName: result.value.verifierName,
+      controlDate: new Date().toLocaleDateString('fr-FR'),
       anomalies: result.value.anomalies,
     })
   }
 
-  return { success: true }
+  return ok({ controlId: result.value.controlId })
 }
 ```
 
