@@ -6,14 +6,13 @@ interface QrCodeModalProps {
   inventoryUrl: string
   qrDataUrl: string
   copied: boolean
-  clipboardSupported: boolean
   error?: string
   onCopy: () => void
   onPrint: () => void
   onClose: () => void
 }
 
-export function QrCodeModal({ isOpen, inventoryName, inventoryUrl, qrDataUrl, copied, clipboardSupported, error, onCopy, onPrint, onClose }: QrCodeModalProps) {
+export function QrCodeModal({ isOpen, inventoryName, inventoryUrl, qrDataUrl, copied, error, onCopy, onPrint, onClose }: QrCodeModalProps) {
   if (!isOpen) return null
 
   return (
@@ -41,18 +40,13 @@ export function QrCodeModal({ isOpen, inventoryName, inventoryUrl, qrDataUrl, co
             <div className="w-[220px] h-[220px] bg-slate-100 rounded-lg animate-pulse" aria-label="Génération en cours…" />
           )}
 
-          {clipboardSupported ? (
-            <div className="flex items-center gap-2 w-full bg-slate-50 rounded-xl px-3 py-2">
-              <p className="flex-1 text-xs text-slate-500 truncate">{inventoryUrl}</p>
-              <button type="button" data-testid="btn-copy-link" onClick={onCopy}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 whitespace-nowrap transition-colors">
-                {copied ? 'Copié !' : 'Copier le lien'}
-              </button>
-            </div>
-          ) : (
-            <input readOnly value={inventoryUrl} aria-label="Lien de l'inventaire"
-              className="w-full text-xs border-2 border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:border-blue-400" />
-          )}
+          <div className="flex items-center gap-2 w-full bg-slate-50 rounded-xl px-3 py-2">
+            <p className="flex-1 text-xs text-slate-500 truncate">{inventoryUrl}</p>
+            <button type="button" data-testid="btn-copy-link" onClick={onCopy}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 whitespace-nowrap transition-colors">
+              {copied ? 'Copié !' : 'Copier le lien'}
+            </button>
+          </div>
 
           <button type="button" data-testid="btn-print-qrcode" onClick={onPrint}
             disabled={!qrDataUrl && !error}

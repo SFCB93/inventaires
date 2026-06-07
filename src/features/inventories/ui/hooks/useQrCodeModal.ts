@@ -8,16 +8,14 @@ export function useQrCodeModal(inventoryId: string) {
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | undefined>()
-  const [clipboardSupported, setClipboardSupported] = useState(false)
-
-  const inventoryUrl = `${window.location.origin}/inventaire/${inventoryId}`
+  const [inventoryUrl, setInventoryUrl] = useState('')
 
   useEffect(() => {
-    setClipboardSupported(!!navigator.clipboard)
-  }, [])
+    setInventoryUrl(`${window.location.origin}/inventaire/${inventoryId}`)
+  }, [inventoryId])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || !inventoryUrl) return
     setQrDataUrl('')
     setError(undefined)
     QRCode.toDataURL(inventoryUrl, { width: 256, margin: 1 })
@@ -47,5 +45,5 @@ export function useQrCodeModal(inventoryId: string) {
 
   const handlePrint = useCallback(() => window.print(), [])
 
-  return { isOpen, open, close, qrDataUrl, inventoryUrl, copied, clipboardSupported, error, handleCopy, handlePrint }
+  return { isOpen, open, close, qrDataUrl, inventoryUrl, copied, error, handleCopy, handlePrint }
 }

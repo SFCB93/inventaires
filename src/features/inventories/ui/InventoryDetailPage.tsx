@@ -52,7 +52,6 @@ export function InventoryDetailPage({ inventory }: InventoryDetailPageProps) {
         inventoryUrl={qr.inventoryUrl}
         qrDataUrl={qr.qrDataUrl}
         copied={qr.copied}
-        clipboardSupported={qr.clipboardSupported}
         error={qr.error}
         onCopy={qr.handleCopy}
         onPrint={qr.handlePrint}

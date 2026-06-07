@@ -11,7 +11,7 @@ interface AnomalyModalProps {
 }
 
 export function AnomalyModal({ isOpen, onConfirm, onCancel }: AnomalyModalProps) {
-  const { comment, setComment, error, textareaRef, handleConfirm, handleCancel } =
+  const { comment, setComment, error, handleConfirm, handleCancel } =
     useAnomalyModal(isOpen, onConfirm, onCancel)
 
   if (!isOpen) return null
@@ -35,7 +35,7 @@ export function AnomalyModal({ isOpen, onConfirm, onCancel }: AnomalyModalProps)
           </label>
           <textarea
             id="textarea-anomaly"
-            ref={textareaRef}
+            autoFocus
             data-testid="textarea-anomaly"
             value={comment}
             onChange={(e) => setComment(e.target.value)}

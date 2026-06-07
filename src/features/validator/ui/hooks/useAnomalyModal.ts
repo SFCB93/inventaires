@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 export function useAnomalyModal(
   isOpen: boolean,
@@ -9,13 +9,6 @@ export function useAnomalyModal(
 ) {
   const [comment, setCommentRaw] = useState('')
   const [error, setError] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => {
-    if (!isOpen) return
-    const timer = setTimeout(() => textareaRef.current?.focus(), 50)
-    return () => clearTimeout(timer)
-  }, [isOpen])
 
   function setComment(value: string) {
     setCommentRaw(value)
@@ -35,5 +28,5 @@ export function useAnomalyModal(
     onCancel()
   }
 
-  return { comment, setComment, error, textareaRef, handleConfirm, handleCancel }
+  return { comment, setComment, error, handleConfirm, handleCancel }
 }
