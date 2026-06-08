@@ -34,14 +34,17 @@ export function useValidatorOrchestrator(
   )
 
   function goBack() {
-    if (step === 'compartment' || (step === 'item' && store.itemIndex === 0)) {
+    if (step === 'compartment' && store.compartmentIndex > 0) {
+      // Retour au dernier item du compartiment précédent
       const prevCompartment = nonEmptyCompartments[store.compartmentIndex - 1]
-      const prevResults = store.results.filter((r) => r.compartmentId !== prevCompartment.id)
-      store.setResults(prevResults)
+      store.setResults(store.results.slice(0, -1))
       store.setCompartmentIndex(store.compartmentIndex - 1)
-      store.setItemIndex(0)
+      store.setItemIndex(prevCompartment.items.length - 1)
+      store.setStep('item')
+    } else if (step === 'item' && store.itemIndex === 0 && store.compartmentIndex > 0) {
+      // Retour à la carte de l'emplacement courant
       store.setStep('compartment')
-    } else {
+    } else if (step === 'item' && store.itemIndex > 0) {
       store.setResults(store.results.slice(0, -1))
       store.setItemIndex(store.itemIndex - 1)
     }

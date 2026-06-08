@@ -3,9 +3,9 @@
 import { useRef, useState } from 'react'
 import type { Item } from '../../domain/types'
 
-const SWIPE_THRESHOLD = 60
-const SWIPE_DOWN_THRESHOLD = 80
-const BADGE_THRESHOLD = 20
+const SWIPE_THRESHOLD = 100
+const SWIPE_DOWN_THRESHOLD = 120
+const BADGE_THRESHOLD = 30
 const ROTATION_FACTOR = 0.04
 const OPACITY_SCALE = 100
 const MAX_GLOW_OPACITY = 0.5

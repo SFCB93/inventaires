@@ -6,6 +6,7 @@ import { useValidatorOrchestrator } from './hooks/useValidatorOrchestrator'
 import { ProgressBar } from './ProgressBar'
 import { ItemCard } from './ItemCard'
 import { CompartmentCard } from './CompartmentCard'
+import { CompartmentHeader } from './CompartmentHeader'
 import { WelcomeScreen } from './WelcomeScreen'
 import { ConfirmationScreen } from './ConfirmationScreen'
 import { RatingScreen } from './RatingScreen'
@@ -86,6 +87,11 @@ export function ValidatorOrchestrator({ inventory, compartments }: ValidatorOrch
         <ProgressBar
           currentItem={results.length + 1}
           totalItems={totalItems}
+          currentCompartment={nonEmptyCompartments.indexOf(currentCompartment) + 1}
+          totalCompartments={totalCompartments}
+        />
+        <CompartmentHeader
+          name={currentCompartment.name}
           currentCompartment={nonEmptyCompartments.indexOf(currentCompartment) + 1}
           totalCompartments={totalCompartments}
         />
