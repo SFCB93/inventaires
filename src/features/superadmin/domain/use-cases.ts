@@ -3,11 +3,16 @@ import type { Result } from '@/shared/domain/result'
 import type { AuthenticatedUser } from '@/shared/lib/auth'
 import { superadminRepository } from '../data/repository'
 import { sendInvitationEmail } from '@/shared/lib/admin-email-service'
-import type { AssociationSummary, CreateAssociationInput } from './types'
+import type { AssociationSummary, CreateAssociationInput, FeedbackRow } from './types'
 
 export async function listAssociationsUseCase(user: AuthenticatedUser): Promise<Result<AssociationSummary[]>> {
   if (user.role !== 'superadmin') return err('Accès non autorisé.')
   return superadminRepository.listAssociations()
+}
+
+export async function listFeedbacksUseCase(user: AuthenticatedUser): Promise<Result<FeedbackRow[]>> {
+  if (user.role !== 'superadmin') return err('Accès non autorisé.')
+  return superadminRepository.listFeedbacks()
 }
 
 export async function createAssociationUseCase(input: CreateAssociationInput, user: AuthenticatedUser, loginUrl?: string): Promise<Result<void>> {

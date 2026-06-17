@@ -17,7 +17,7 @@ export function SuperadminPage({ associations }: SuperadminPageProps) {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Administration</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Associations</h1>
         <button
           onClick={form.open}
           data-testid="btn-new-association"

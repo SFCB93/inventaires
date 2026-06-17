@@ -1,7 +1,9 @@
+import { FieldPath } from 'firebase-admin/firestore'
 import { adminDb, adminAuth } from '@/shared/data/firebase-admin'
+import { chunkArray, FIRESTORE_IN_LIMIT } from '@/shared/lib/array'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
-import type { AssociationSummary, CreateAssociationInput } from '../domain/types'
+import type { AssociationSummary, CreateAssociationInput, FeedbackRow } from '../domain/types'
 
 export const superadminRepository = {
   async listAssociations(): Promise<Result<AssociationSummary[]>> {
@@ -29,6 +31,42 @@ export const superadminRepository = {
     } catch (error) {
       console.error('[listAssociations]', error)
       return err('Impossible de lister les associations.')
+    }
+  },
+
+  async listFeedbacks(): Promise<Result<FeedbackRow[]>> {
+    try {
+      const snap = await adminDb
+        .collection('feedbacks')
+        .orderBy('submittedAt', 'desc')
+        .limit(100)
+        .get()
+      if (snap.empty) return ok([])
+
+      const controlIds = [...new Set(snap.docs.map((d) => d.data().controlId as string))]
+      const verifierNames = new Map<string, string>()
+      for (const chunk of chunkArray(controlIds, FIRESTORE_IN_LIMIT)) {
+        const controlSnap = await adminDb
+          .collection('controles')
+          .where(FieldPath.documentId(), 'in', chunk)
+          .get()
+        for (const doc of controlSnap.docs) {
+          verifierNames.set(doc.id, (doc.data().verifierName as string) ?? '')
+        }
+      }
+
+      return ok(snap.docs.map((doc) => {
+        const d = doc.data()
+        return {
+          id: doc.id,
+          submittedAt: d.submittedAt?.toDate().toISOString() ?? '',
+          rating: (d.rating as number) ?? 0,
+          comment: (d.comment as string) ?? '',
+          verifierName: verifierNames.get(d.controlId as string) ?? '',
+        }
+      }))
+    } catch (error) {
+      return err(`Impossible de charger les feedbacks. Erreur: ${(error as Error).message}`)
     }
   },
 
