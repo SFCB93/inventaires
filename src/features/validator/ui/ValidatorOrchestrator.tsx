@@ -19,9 +19,10 @@ const MAX_BG_OPACITY = 0.85
 interface ValidatorOrchestratorProps {
   inventory: Inventory
   compartments: CompartmentWithItems[]
+  lastExpiryDates: Record<string, string>
 }
 
-export function ValidatorOrchestrator({ inventory, compartments }: ValidatorOrchestratorProps) {
+export function ValidatorOrchestrator({ inventory, compartments, lastExpiryDates }: ValidatorOrchestratorProps) {
   const {
     step, results, isSubmitting, submissionError, submittedAt, controlId,
     nonEmptyCompartments, totalCompartments, totalItems,
@@ -104,6 +105,7 @@ export function ValidatorOrchestrator({ inventory, compartments }: ValidatorOrch
           <ItemCard
             key={currentItem.id}
             item={currentItem}
+            initialExpiryDate={currentItem.hasExpiry && !currentItem.isCritical ? lastExpiryDates[currentItem.id] : undefined}
             onPresent={(expiryDate) => recordResult({ status: 'present', expiryDate })}
             onAnomaly={(comment, expiryDate) => recordResult({ status: 'anomaly', comment, expiryDate })}
             onDragChange={handleDragChange}

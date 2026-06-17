@@ -8,12 +8,13 @@ import { useItemCard } from './hooks/useItemCard'
 
 interface ItemCardProps {
   item: Item
+  initialExpiryDate?: string
   onPresent: (expiryDate: string | undefined) => void
   onAnomaly: (comment: string, expiryDate: string | undefined) => void
   onDragChange?: (dragX: number | null) => void
 }
 
-export function ItemCard({ item, onPresent, onAnomaly, onDragChange }: ItemCardProps) {
+export function ItemCard({ item, initialExpiryDate, onPresent, onAnomaly, onDragChange }: ItemCardProps) {
   const {
     expiryDate, setExpiryDate, dateError,
     isModalOpen, setIsModalOpen,
@@ -21,7 +22,7 @@ export function ItemCard({ item, onPresent, onAnomaly, onDragChange }: ItemCardP
     glowOpacity, showAnomalyBadge, showOkBadge, showAbsentBadge, cardRotate,
     handleMarkPresent, handleOpenAnomaly, handleConfirmAnomaly,
     handleTouchStart, handleTouchMove, handleTouchEnd, handleTouchCancel,
-  } = useItemCard(item, onPresent, onAnomaly, onDragChange)
+  } = useItemCard(item, initialExpiryDate, onPresent, onAnomaly, onDragChange)
 
   const hasPhoto = Boolean(item.photoUrl)
   const glowRgb = dragX > 0 ? '245, 158, 11' : '16, 185, 129'

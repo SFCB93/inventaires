@@ -18,6 +18,7 @@ export default async function InventairePage({ params }: Props) {
     <ValidatorOrchestrator
       inventory={result.value.inventory}
       compartments={result.value.compartments}
+      lastExpiryDates={result.value.lastExpiryDates}
     />
   )
 }

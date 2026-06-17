@@ -34,6 +34,23 @@ Permettre à un secouriste de contrôler le contenu d'un inventaire (véhicule, 
 
 ---
 
+## Pré-remplissage de la date de péremption
+
+Pour les matériels `hasExpiry: true, isCritical: false` (périssables non critiques), le champ
+date de péremption est pré-rempli avec la **dernière date connue** issue des contrôles précédents,
+si elle existe.
+
+**Règles :**
+- Uniquement pour `hasExpiry: true, isCritical: false`. Les matériels critiques ne sont jamais pré-remplis : la date doit être re-saisie à chaque contrôle pour garantir sa fraîcheur.
+- La date pré-remplie est modifiable librement par le secouriste.
+- Si aucun contrôle précédent n'a enregistré de date pour ce matériel → champ vide (comportement actuel).
+
+**Source de données :**
+Les 3 contrôles les plus récents de l'inventaire sont chargés au démarrage. On construit une map
+`itemId → dernière expiryDate connue` (premier contrôle trouvé avec une date pour cet item).
+
+---
+
 ## Parcours alternatifs et edge cases
 
 - Si `inventaireId` inconnu ou supprimé → page d'erreur explicite : "Cet inventaire n'existe pas ou a été supprimé."
@@ -45,6 +62,7 @@ Permettre à un secouriste de contrôler le contenu d'un inventaire (véhicule, 
 - Si le commentaire d'anomalie est vide → impossible de fermer la popup, message de validation affiché.
 - Si le champ nom du vérificateur est vide à la soumission → impossible de soumettre, message de validation affiché.
 - Après soumission réussie → la page de confirmation est terminale : pas de possibilité de modifier ou de resoumettre depuis cette session.
+- Si le chargement des dates précédentes échoue → le contrôle démarre normalement avec les champs vides (dégradé silencieux, non bloquant).
 
 ---
 
@@ -85,7 +103,7 @@ Permettre à un secouriste de contrôler le contenu d'un inventaire (véhicule, 
 
 ## Use cases à implémenter
 
-- `chargerInventaire(inventaireId: string)` → `Result<{ inventaire: Inventaire; emplacements: EmplacementAvecMateriels[] }>` — charge l'inventaire, ses emplacements et leurs matériels, triés par `order`
+- `chargerInventaire(inventaireId: string)` → `Result<{ inventaire: Inventaire; emplacements: EmplacementAvecMateriels[]; lastExpiryDates: Record<string, string> }>` — charge l'inventaire, ses emplacements et leurs matériels (triés par `order`), et les dernières dates de péremption connues par `itemId`
 - `soumettreControle(input: SoumissionControle)` → `Result<{ controleId: string }>` — persiste le contrôle complet et déclenche le mail
 
 ```ts
@@ -122,7 +140,7 @@ type ResultatMateriel = {
   emplacementId: string
   statut: 'present' | 'anomalie'
   commentaire?: string       // obligatoire si anomalie
-  datePeremption?: string    // obligatoire si isCritical, facultatif sinon
+  datePeremption?: string    // obligatoire si isCritical + Présent, facultatif sinon
 }
 ```
 
@@ -141,21 +159,20 @@ type ResultatMateriel = {
 
 ```
 controles/{controleId}
-  inventaireId: string
-  nomVerificateur: string
-  soumisLe: Timestamp          // serverTimestamp
-  resultats: [
+  inventoryId: string
+  associationId: string
+  verifierName: string
+  submittedAt: Timestamp          // serverTimestamp
+  results: [
     {
-      materielId: string
-      emplacementId: string
-      statut: 'present' | 'anomalie'
-      commentaire: string | null
-      datePeremption: string | null
+      itemId: string
+      compartmentId: string
+      status: 'present' | 'anomaly'
+      comment: string | null
+      expiryDate: string | null
     }
   ]
 ```
-
-> Les noms de collections sont des hypothèses à confirmer lors du sprint backoffice.
 
 ---
 

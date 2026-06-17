@@ -12,11 +12,12 @@ const MAX_GLOW_OPACITY = 0.5
 
 export function useItemCard(
   item: Item,
+  initialExpiryDate: string | undefined,
   onPresent: (expiryDate: string | undefined) => void,
   onAnomaly: (comment: string, expiryDate: string | undefined) => void,
   onDragChange?: (dragX: number | null) => void,
 ) {
-  const [expiryDate, setExpiryDateRaw] = useState('')
+  const [expiryDate, setExpiryDateRaw] = useState(initialExpiryDate ?? '')
   const [dateError, setDateError] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [dragX, setDragX] = useState(0)

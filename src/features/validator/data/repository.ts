@@ -1,4 +1,4 @@
-// Dépasse 120 lignes : charge emplacements + matériels en cascade et construit les résultats de contrôle.
+// Dépasse 120 lignes : charge emplacements + matériels en cascade, dates de péremption précédentes, et persiste les contrôles.
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/shared/data/firebase-admin";
 import { chunkArray, FIRESTORE_IN_LIMIT } from "@/shared/lib/array";
@@ -16,6 +16,7 @@ import type {
 export type LoadInventoryResult = {
   inventory: Inventory;
   compartments: CompartmentWithItems[];
+  lastExpiryDates: Record<string, string>;
 };
 
 export const validatorRepository = {
@@ -94,11 +95,42 @@ export const validatorRepository = {
         return err("Cet inventaire ne contient aucun matériel à contrôler.");
       }
 
-      return ok({ inventory, compartments });
+      return ok({ inventory, compartments, lastExpiryDates: {} });
     } catch (error) {
       return err(
         `Impossible de charger cet inventaire. Erreur: ${(error as Error).message}`,
       );
+    }
+  },
+
+  async loadLastExpiryDates(
+    inventoryId: string,
+  ): Promise<Result<Record<string, string>>> {
+    try {
+      const snap = await adminDb
+        .collection("controles")
+        .where("inventoryId", "==", inventoryId)
+        .get();
+      const sorted = snap.docs
+        .sort((a, b) => {
+          const aMs = a.data().submittedAt?.toMillis?.() ?? 0
+          const bMs = b.data().submittedAt?.toMillis?.() ?? 0
+          return bMs - aMs
+        })
+        .slice(0, 3)
+      const dates: Record<string, string> = {};
+      for (const doc of sorted) {
+        const results = doc.data().results as Array<{ itemId: string; expiryDate: string | null }>;
+        for (const r of results) {
+          if (r.expiryDate && !dates[r.itemId]) {
+            dates[r.itemId] = r.expiryDate;
+          }
+        }
+      }
+      return ok(dates);
+    } catch (error) {
+      console.error('[loadLastExpiryDates]', (error as Error).message)
+      return err(`Erreur chargement dates: ${(error as Error).message}`);
     }
   },
 

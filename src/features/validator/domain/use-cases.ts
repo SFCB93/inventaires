@@ -1,5 +1,5 @@
 import type { Result } from '@/shared/domain/result'
-import { err } from '@/shared/domain/result'
+import { ok, err } from '@/shared/domain/result'
 import { validatorRepository, type LoadInventoryResult } from '../data/repository'
 import type { ControlEmailContext, ControlSubmission, FeedbackSubmission } from './types'
 import { sendControlCompletedEmail } from './email-service'
@@ -8,7 +8,13 @@ export async function loadInventoryUseCase(
   inventoryId: string,
 ): Promise<Result<LoadInventoryResult>> {
   if (!inventoryId.trim()) return err('Identifiant d\'inventaire manquant.')
-  return validatorRepository.loadInventory(inventoryId)
+  const [inventoryResult, datesResult] = await Promise.all([
+    validatorRepository.loadInventory(inventoryId),
+    validatorRepository.loadLastExpiryDates(inventoryId),
+  ])
+  if (!inventoryResult.ok) return inventoryResult
+  const lastExpiryDates = datesResult.ok ? datesResult.value : {}
+  return ok({ ...inventoryResult.value, lastExpiryDates })
 }
 
 export async function submitFeedbackUseCase(submission: FeedbackSubmission): Promise<Result<void>> {
