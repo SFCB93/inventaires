@@ -18,8 +18,8 @@ vi.mock('@/shared/lib/admin-email-service', () => ({
   sendInvitationEmail: vi.fn(),
 }))
 
-const superadmin: AuthenticatedUser = { uid: 'sa-1', associationId: '', role: 'superadmin' }
-const admin: AuthenticatedUser = { uid: 'u-1', associationId: 'asso-1', role: 'admin' }
+const superadmin: AuthenticatedUser = { uid: 'sa-1', associationId: '', associationIds: [], role: 'superadmin' }
+const admin: AuthenticatedUser = { uid: 'u-1', associationId: 'asso-1', associationIds: ['asso-1'], role: 'admin' }
 
 const twoAccounts: AdminAccount[] = [
   { uid: 'u-1', email: 'admin1@b.com', createdAt: null },
@@ -122,6 +122,6 @@ describe('removeAdminUseCase', () => {
     vi.mocked(teamRepository.removeAdminAccount).mockResolvedValue({ ok: true, value: undefined })
     const result = await removeAdminUseCase('u-2', admin)
     expect(result.ok).toBe(true)
-    expect(teamRepository.removeAdminAccount).toHaveBeenCalledWith('u-2')
+    expect(teamRepository.removeAdminAccount).toHaveBeenCalledWith('u-2', 'asso-1')
   })
 })

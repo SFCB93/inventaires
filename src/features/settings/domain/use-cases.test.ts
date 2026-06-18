@@ -16,8 +16,8 @@ vi.mock('./email-service', () => ({
   sendPasswordResetEmail: vi.fn(),
 }))
 
-const superadmin: AuthenticatedUser = { uid: 'sa-1', associationId: '', role: 'superadmin' }
-const admin: AuthenticatedUser = { uid: 'u-1', associationId: 'asso-1', role: 'admin' }
+const superadmin: AuthenticatedUser = { uid: 'sa-1', associationId: '', associationIds: [], role: 'superadmin' }
+const admin: AuthenticatedUser = { uid: 'u-1', associationId: 'asso-1', associationIds: ['asso-1'], role: 'admin' }
 
 const mockSettings = {
   name: 'Asso',

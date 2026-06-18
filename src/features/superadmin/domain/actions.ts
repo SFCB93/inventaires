@@ -43,7 +43,7 @@ export async function leaveAssociationAction() {
   if (!user) redirect('/login')
   const cookieStore = await cookies()
   cookieStore.delete(ACTING_AS_COOKIE)
-  redirect('/admin')
+  redirect(user.role === 'superadmin' ? '/admin' : '/associations')
 }
 
 export async function createAssociationAction(input: CreateAssociationInput): Promise<Result<void>> {

@@ -3,3 +3,8 @@ export type AdminAccount = {
   email: string
   createdAt: Date | null
 }
+
+export type AssociationSummary = {
+  id: string
+  name: string
+}

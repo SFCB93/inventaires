@@ -7,6 +7,7 @@ export default async function InventairesPage() {
   const user = await getAuthenticatedUser()
   if (!user) redirect('/login')
   if (user.role === 'superadmin' && !user.associationId) redirect('/admin')
+  if (user.role === 'admin' && !user.associationId) redirect('/associations')
 
   const result = await listInventoriesUseCase(user.associationId)
   if (!result.ok) {

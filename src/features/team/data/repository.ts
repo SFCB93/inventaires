@@ -1,12 +1,13 @@
+import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb, adminAuth } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
-import type { AdminAccount } from '../domain/types'
+import type { AdminAccount, AssociationSummary } from '../domain/types'
 
 export const teamRepository = {
   async listAdminAccounts(associationId: string): Promise<Result<AdminAccount[]>> {
     try {
-      const snap = await adminDb.collection('users').where('associationId', '==', associationId).where('role', '==', 'admin').get()
+      const snap = await adminDb.collection('users').where('associationIds', 'array-contains', associationId).where('role', '==', 'admin').get()
       if (snap.empty) return ok([])
       const { users } = await adminAuth.getUsers(snap.docs.map((d) => ({ uid: d.id })))
       const accounts = users.map((u) => ({
@@ -23,31 +24,57 @@ export const teamRepository = {
   },
 
   async createAdminAccount(email: string, associationId: string): Promise<Result<{ resetLink: string | undefined }>> {
-    let uid: string | undefined
     try {
-      const authUser = await adminAuth.createUser({ email })
-      uid = authUser.uid
-      await adminDb.collection('users').doc(uid).set({ associationId, role: 'admin' })
+      let uid: string
+      try {
+        const authUser = await adminAuth.createUser({ email })
+        uid = authUser.uid
+        await adminDb.collection('users').doc(uid).set({ associationIds: [associationId], role: 'admin' })
+      } catch (error) {
+        const code = (error as { code?: string }).code
+        if (code !== 'auth/email-already-exists') {
+          console.error('[createAdminAccount]', error)
+          return err(`Impossible de créer le compte. Erreur: ${(error as Error).message}`)
+        }
+        // User already exists in Auth — add this association if they're a regular admin
+        const existing = await adminAuth.getUserByEmail(email)
+        uid = existing.uid
+        const docRef = adminDb.collection('users').doc(uid)
+        const doc = await docRef.get()
+        if (doc.exists) {
+          if (doc.data()?.role === 'superadmin') return err('Impossible d\'ajouter un superadmin comme administrateur.')
+          await docRef.update({ associationIds: FieldValue.arrayUnion(associationId) })
+        } else {
+          await docRef.set({ associationIds: [associationId], role: 'admin' })
+        }
+      }
+      try {
+        const resetLink = await adminAuth.generatePasswordResetLink(email)
+        return ok({ resetLink })
+      } catch (error) {
+        console.error(`[createAdminAccount] Compte créé (${uid}) mais génération du lien échouée.`, error)
+        return ok({ resetLink: undefined })
+      }
     } catch (error) {
-      const code = (error as { code?: string }).code
-      if (code === 'auth/email-already-exists') return err('Un compte existe déjà avec cet email.')
-      if (uid) console.error(`[createAdminAccount] Compte Auth créé (${uid}) mais échec Firestore`, error)
-      else console.error('[createAdminAccount]', error)
+      console.error('[createAdminAccount]', error)
       return err(`Impossible de créer le compte. Erreur: ${(error as Error).message}`)
-    }
-    try {
-      const resetLink = await adminAuth.generatePasswordResetLink(email)
-      return ok({ resetLink })
-    } catch (error) {
-      console.error(`[createAdminAccount] Compte créé (${uid}) mais génération du lien échouée.`, error)
-      return ok({ resetLink: undefined })
     }
   },
 
-  async removeAdminAccount(uid: string): Promise<Result<void>> {
+  async removeAdminAccount(uid: string, associationId: string): Promise<Result<void>> {
     try {
-      await adminAuth.deleteUser(uid)
-      await adminDb.collection('users').doc(uid).delete()
+      const docRef = adminDb.collection('users').doc(uid)
+      await adminDb.runTransaction(async (t) => {
+        const doc = await t.get(docRef)
+        const ids = (doc.data()?.associationIds as string[]) ?? []
+        const remaining = ids.filter((id) => id !== associationId)
+        if (remaining.length === 0) {
+          await adminAuth.deleteUser(uid)
+          t.delete(docRef)
+        } else {
+          t.update(docRef, { associationIds: remaining })
+        }
+      })
       return ok(undefined)
     } catch (error) {
       return err(`Impossible de supprimer le compte. Erreur: ${(error as Error).message}`)
@@ -60,6 +87,18 @@ export const teamRepository = {
       return (doc.data()?.name as string) ?? 'votre association'
     } catch {
       return 'votre association'
+    }
+  },
+
+  async getAssociationNames(ids: string[]): Promise<AssociationSummary[]> {
+    if (ids.length === 0) return []
+    try {
+      const docs = await adminDb.getAll(...ids.map((id) => adminDb.collection('associations').doc(id)))
+      return docs
+        .filter((doc) => doc.exists)
+        .map((doc) => ({ id: doc.id, name: (doc.data()?.name as string) ?? 'Association sans nom' }))
+    } catch {
+      return []
     }
   },
 }

@@ -7,11 +7,15 @@ import { DashboardNav } from './DashboardNav'
 
 export default async function BackofficeLayout({ children }: { children: React.ReactNode }) {
   const user = await getAuthenticatedUser()
-  const isSuperadminOnly = user?.role === 'superadmin' && !user?.associationId
-  const isActingAsAdmin = user?.role === 'superadmin' && !!user?.associationId
+  if (!user) redirect('/login')
+
+  const isSuperadminOnly = user.role === 'superadmin' && !user.associationId
+  const isActingAsAdmin = user.role === 'superadmin' && !!user.associationId
+  const isMultiAssocAdmin = user.role === 'admin' && user.associationIds.length > 1
+  const isActingAsAssoc = isMultiAssocAdmin && !!user.associationId
 
   let associationName = ''
-  if (user?.associationId) {
+  if (user.associationId) {
     const settingsResult = await getAssociationSettingsUseCase(user.associationId, user)
     if (settingsResult.ok) associationName = settingsResult.value.name
   }
@@ -35,6 +39,13 @@ export default async function BackofficeLayout({ children }: { children: React.R
               <form action={leaveAssociationAction}>
                 <button type="submit" className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
                   ← Admin
+                </button>
+              </form>
+            )}
+            {isActingAsAssoc && (
+              <form action={leaveAssociationAction}>
+                <button type="submit" className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                  ← Associations
                 </button>
               </form>
             )}

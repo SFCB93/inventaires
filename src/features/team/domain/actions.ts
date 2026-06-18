@@ -1,11 +1,14 @@
 'use server'
 
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { Result } from '@/shared/domain/result'
 import { getAuthenticatedUser } from '@/shared/lib/auth'
 import { inviteAdminUseCase, removeAdminUseCase } from './use-cases'
+
+const ACTING_AS_COOKIE = 'acting-as'
+const SESSION_DURATION_S = 60 * 60 * 24 * 5
 
 async function getLoginUrl(): Promise<string | undefined> {
   try {
@@ -17,6 +20,20 @@ async function getLoginUrl(): Promise<string | undefined> {
   } catch {
     return undefined
   }
+}
+
+export async function selectAssociationAction(associationId: string) {
+  const user = await getAuthenticatedUser()
+  if (!user || user.role !== 'admin' || !user.associationIds.includes(associationId)) redirect('/login')
+  const cookieStore = await cookies()
+  cookieStore.set(ACTING_AS_COOKIE, associationId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: SESSION_DURATION_S,
+    path: '/',
+  })
+  redirect('/dashboard/inventaires')
 }
 
 export async function inviteAdminAction(email: string): Promise<Result<void>> {

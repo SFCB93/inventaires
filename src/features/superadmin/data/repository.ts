@@ -14,8 +14,10 @@ export const superadminRepository = {
       ])
       const adminUidByAssoc = new Map<string, string>()
       for (const doc of usersSnap.docs) {
-        const assocId = doc.data().associationId as string
-        if (assocId && !adminUidByAssoc.has(assocId)) adminUidByAssoc.set(assocId, doc.id)
+        const assocIds = (doc.data().associationIds as string[]) ?? []
+        for (const assocId of assocIds) {
+          if (assocId && !adminUidByAssoc.has(assocId)) adminUidByAssoc.set(assocId, doc.id)
+        }
       }
       const uids = [...adminUidByAssoc.values()]
       const emailByUid = new Map<string, string>()
@@ -76,7 +78,7 @@ export const superadminRepository = {
       const authUser = await adminAuth.createUser({ email: input.adminEmail })
       uid = authUser.uid
       const assocRef = await adminDb.collection('associations').add({ name: input.name, notificationEmails: [] })
-      await adminDb.collection('users').doc(uid).set({ associationId: assocRef.id, role: 'admin' })
+      await adminDb.collection('users').doc(uid).set({ associationIds: [assocRef.id], role: 'admin' })
     } catch (error) {
       if (uid) console.error(`[createAssociation] Compte Auth créé (${uid}) mais échec Firestore — nettoyage manuel requis.`, error)
       else console.error('[createAssociation]', error)

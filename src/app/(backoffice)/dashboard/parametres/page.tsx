@@ -8,6 +8,7 @@ export default async function ParametresRoute() {
   const user = await getAuthenticatedUser()
   if (!user) redirect('/login')
   if (user.role === 'superadmin' && !user.associationId) redirect('/admin')
+  if (user.role === 'admin' && !user.associationId) redirect('/associations')
 
   const [settingsResult, accountsResult] = await Promise.all([
     getAssociationSettingsUseCase(user.associationId, user),

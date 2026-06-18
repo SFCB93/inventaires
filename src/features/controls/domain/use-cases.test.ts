@@ -21,7 +21,7 @@ vi.mock('../data/repository', () => ({
   },
 }))
 
-const mockUser: AuthenticatedUser = { uid: 'user-1', associationId: 'asso-1', role: 'admin' }
+const mockUser: AuthenticatedUser = { uid: 'user-1', associationId: 'asso-1', associationIds: ['asso-1'], role: 'admin' }
 
 const mockInput: CreateCorrectionInput = {
   itemId: 'item-1',

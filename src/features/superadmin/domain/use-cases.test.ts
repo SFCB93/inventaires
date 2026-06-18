@@ -15,8 +15,8 @@ vi.mock('@/shared/lib/admin-email-service', () => ({
   sendInvitationEmail: vi.fn(),
 }))
 
-const superadmin: AuthenticatedUser = { uid: 'sa-1', associationId: '', role: 'superadmin' }
-const admin: AuthenticatedUser = { uid: 'u-1', associationId: 'asso-1', role: 'admin' }
+const superadmin: AuthenticatedUser = { uid: 'sa-1', associationId: '', associationIds: [], role: 'superadmin' }
+const admin: AuthenticatedUser = { uid: 'u-1', associationId: 'asso-1', associationIds: ['asso-1'], role: 'admin' }
 
 describe('listAssociationsUseCase', () => {
   beforeEach(() => vi.clearAllMocks())
