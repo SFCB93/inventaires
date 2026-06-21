@@ -16,7 +16,7 @@ interface ItemCardProps {
 
 export function ItemCard({ item, initialExpiryDate, onPresent, onAnomaly, onDragChange }: ItemCardProps) {
   const {
-    expiryDate, setExpiryDate, dateError,
+    expiryDate, setExpiryDate, clearExpiryDate, dateError,
     isModalOpen, setIsModalOpen,
     dragX, dragY, isDragging,
     glowOpacity, showAnomalyBadge, showOkBadge, showAbsentBadge, cardRotate,
@@ -84,18 +84,34 @@ export function ItemCard({ item, initialExpiryDate, onPresent, onAnomaly, onDrag
                   {item.isCritical ? 'obligatoire' : 'facultatif'}
                 </span>
               </label>
-              <input
-                id="input-expiry-date"
-                data-testid="input-expiry-date"
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                className={`w-full h-12 rounded-xl border-2 px-3 text-base bg-white focus:outline-none focus:border-blue-500 transition-colors ${dateError ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  id="input-expiry-date"
+                  data-testid="input-expiry-date"
+                  type="month"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  placeholder="AAAA-MM ou MM-AAAA"
+                  className={`flex-1 h-12 rounded-xl border-2 px-3 text-base bg-white focus:outline-none focus:border-blue-500 transition-colors ${dateError ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+                />
+                {expiryDate !== '' && (
+                  <button
+                    type="button"
+                    data-testid="btn-clear-expiry"
+                    onClick={clearExpiryDate}
+                    className="flex items-center justify-center w-11 h-11 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
+                    aria-label="Effacer la date de péremption"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
               {dateError && (
                 <p role="alert" className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
                   <span aria-hidden="true">↑</span>
-                  La date de péremption est obligatoire pour ce matériel critique.
+                  {dateError === 'format'
+                    ? 'Format invalide. Attendu : AAAA-MM ou MM-AAAA (ex : 2026-05 ou 05-2026).'
+                    : 'La date de péremption est obligatoire pour ce matériel critique.'}
                 </p>
               )}
             </div>

@@ -47,3 +47,12 @@ export type FeedbackSubmission = {
   rating: number
   comment: string
 }
+
+export type PublicControlSummary = {
+  id: string
+  verifierName: string
+  submittedAt: Date
+  anomalyCount: number
+  anomalies: { itemName: string; compartmentName: string; comment: string }[]
+  expiryDates: { itemName: string; compartmentName: string; date: string }[]
+}

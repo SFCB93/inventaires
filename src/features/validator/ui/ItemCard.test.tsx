@@ -88,15 +88,15 @@ describe("ItemCard — décision Présent", () => {
     expect(screen.getByRole('alert')).toBeInTheDocument()
   })
 
-  it("appelle onPresent avec la date si le matériel est critique et la date est renseignée", async () => {
+  it("appelle onPresent avec la date convertie si le matériel est critique et la date est renseignée (AAAA-MM)", async () => {
     const user = userEvent.setup()
     const onPresent = vi.fn()
     render(<ItemCard item={criticalItem} onPresent={onPresent} onAnomaly={vi.fn()} />)
 
-    await user.type(screen.getByTestId('input-expiry-date'), '2026-12-31')
+    await user.type(screen.getByTestId('input-expiry-date'), '2026-12')
     await user.click(screen.getByTestId('btn-present'))
 
-    expect(onPresent).toHaveBeenCalledWith('2026-12-31')
+    expect(onPresent).toHaveBeenCalledWith('2026-12-01')
   })
 
   it("appelle onPresent avec la date si périssable non critique et date renseignée", async () => {
@@ -104,10 +104,23 @@ describe("ItemCard — décision Présent", () => {
     const onPresent = vi.fn()
     render(<ItemCard item={perishableItem} onPresent={onPresent} onAnomaly={vi.fn()} />)
 
-    await user.type(screen.getByTestId('input-expiry-date'), '2026-06-15')
+    await user.type(screen.getByTestId('input-expiry-date'), '2026-06')
     await user.click(screen.getByTestId('btn-present'))
 
-    expect(onPresent).toHaveBeenCalledWith('2026-06-15')
+    expect(onPresent).toHaveBeenCalledWith('2026-06-01')
+  })
+
+  it("efface la date au clic sur le bouton ×", async () => {
+    const user = userEvent.setup()
+    render(<ItemCard item={criticalItem} onPresent={vi.fn()} onAnomaly={vi.fn()} />)
+
+    await user.type(screen.getByTestId('input-expiry-date'), '2026-12')
+    expect(screen.getByTestId('btn-clear-expiry')).toBeInTheDocument()
+
+    await user.click(screen.getByTestId('btn-clear-expiry'))
+
+    expect(screen.getByTestId('input-expiry-date')).toHaveValue('')
+    expect(screen.queryByTestId('btn-clear-expiry')).not.toBeInTheDocument()
   })
 })
 

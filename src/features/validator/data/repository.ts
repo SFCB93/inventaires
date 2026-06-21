@@ -11,7 +11,10 @@ import type {
   FeedbackSubmission,
   Inventory,
   Item,
+  PublicControlSummary,
 } from "../domain/types";
+
+const RECENT_CONTROLS_LIMIT = 10
 
 export type LoadInventoryResult = {
   inventory: Inventory;
@@ -185,6 +188,77 @@ export const validatorRepository = {
       return ok(undefined)
     } catch (error) {
       return err(`Impossible d'enregistrer le feedback. Erreur: ${(error as Error).message}`)
+    }
+  },
+
+  async listRecentControls(inventoryId: string): Promise<Result<PublicControlSummary[]>> {
+    try {
+      type RawResult = { itemId: string; compartmentId: string; status: string; comment?: string | null; expiryDate?: string | null }
+
+      const snap = await adminDb.collection('controles').where('inventoryId', '==', inventoryId).get()
+
+      const recentDocs = snap.docs
+        .slice()
+        .sort((a, b) => (b.data().submittedAt?.toMillis?.() ?? 0) - (a.data().submittedAt?.toMillis?.() ?? 0))
+        .slice(0, RECENT_CONTROLS_LIMIT)
+
+      const itemIds = new Set<string>()
+      const compartmentIds = new Set<string>()
+      for (const doc of recentDocs) {
+        for (const r of (doc.data().results ?? []) as RawResult[]) {
+          if (r.status === 'anomaly' || r.expiryDate) {
+            itemIds.add(r.itemId)
+            compartmentIds.add(r.compartmentId)
+          }
+        }
+      }
+
+      const itemNames = new Map<string, string>()
+      const compartmentNames = new Map<string, string>()
+      const tasks: Promise<void>[] = []
+      if (itemIds.size > 0) {
+        tasks.push(
+          adminDb.getAll(...[...itemIds].map(id => adminDb.collection('materiels').doc(id)))
+            .then(docs => { for (const doc of docs) { if (doc.exists) itemNames.set(doc.id, doc.data()!.name as string) } })
+        )
+      }
+      if (compartmentIds.size > 0) {
+        tasks.push(
+          adminDb.getAll(...[...compartmentIds].map(id => adminDb.collection('emplacements').doc(id)))
+            .then(docs => { for (const doc of docs) { if (doc.exists) compartmentNames.set(doc.id, doc.data()!.name as string) } })
+        )
+      }
+      await Promise.all(tasks)
+
+      const controls = recentDocs.map((doc) => {
+        const data = doc.data()
+        const results = (data.results ?? []) as RawResult[]
+        return {
+          id: doc.id,
+          verifierName: data.verifierName as string,
+          submittedAt: data.submittedAt?.toDate?.() ?? new Date(),
+          anomalyCount: results.filter(r => r.status === 'anomaly').length,
+          anomalies: results
+            .filter(r => r.status === 'anomaly')
+            .map(r => ({
+              itemName: itemNames.get(r.itemId) ?? r.itemId,
+              compartmentName: compartmentNames.get(r.compartmentId) ?? r.compartmentId,
+              comment: r.comment ?? '',
+            })),
+          expiryDates: results
+            .filter(r => r.expiryDate)
+            .map(r => ({
+              itemName: itemNames.get(r.itemId) ?? r.itemId,
+              compartmentName: compartmentNames.get(r.compartmentId) ?? r.compartmentId,
+              date: r.expiryDate!,
+            })),
+        }
+      })
+
+      return ok(controls)
+    } catch (error) {
+      console.error('[listRecentControls] erreur', error)
+      return err(`Impossible de charger les contrôles. Erreur: ${(error as Error).message}`)
     }
   },
 

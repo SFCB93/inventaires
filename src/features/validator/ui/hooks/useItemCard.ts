@@ -9,6 +9,8 @@ const BADGE_THRESHOLD = 30
 const ROTATION_FACTOR = 0.04
 const OPACITY_SCALE = 100
 const MAX_GLOW_OPACITY = 0.5
+const FORMAT_YYYYMM = /^20\d{2}-(?:0[1-9]|1[0-2])$/
+const FORMAT_MMYYYY = /^(?:0?[1-9]|1[0-2])-20\d{2}$/
 
 export function useItemCard(
   item: Item,
@@ -17,8 +19,10 @@ export function useItemCard(
   onAnomaly: (comment: string, expiryDate: string | undefined) => void,
   onDragChange?: (dragX: number | null) => void,
 ) {
-  const [expiryDate, setExpiryDateRaw] = useState(initialExpiryDate ?? '')
-  const [dateError, setDateError] = useState(false)
+  const [expiryDate, setExpiryDateRaw] = useState(
+    initialExpiryDate ? initialExpiryDate.slice(0, 7) : ''
+  )
+  const [dateError, setDateError] = useState<'required' | 'format' | false>(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [dragX, setDragX] = useState(0)
   const [dragY, setDragY] = useState(0)
@@ -31,9 +35,29 @@ export function useItemCard(
     if (dateError) setDateError(false)
   }
 
+  function clearExpiryDate() {
+    setExpiryDateRaw('')
+    if (dateError) setDateError(false)
+  }
+
+  function toStoredDate(value: string): string | undefined {
+    const trimmed = value.trim()
+    if (!trimmed) return undefined
+    if (FORMAT_MMYYYY.test(trimmed)) {
+      const [month, year] = trimmed.split('-')
+      return `${year}-${month.padStart(2, '0')}-01`
+    }
+    return `${trimmed}-01`
+  }
+
   function validateDate(): boolean {
-    if (item.hasExpiry && item.isCritical && !expiryDate.trim()) {
-      setDateError(true)
+    const trimmed = expiryDate.trim()
+    if (item.hasExpiry && item.isCritical && !trimmed) {
+      setDateError('required')
+      return false
+    }
+    if (trimmed && !FORMAT_YYYYMM.test(trimmed) && !FORMAT_MMYYYY.test(trimmed)) {
+      setDateError('format')
       return false
     }
     return true
@@ -41,16 +65,17 @@ export function useItemCard(
 
   function handleMarkPresent() {
     if (!validateDate()) return
-    onPresent(expiryDate.trim() || undefined)
+    onPresent(toStoredDate(expiryDate))
   }
 
   function handleOpenAnomaly() {
+    if (!validateDate()) return
     setIsModalOpen(true)
   }
 
   function handleConfirmAnomaly(comment: string) {
     setIsModalOpen(false)
-    onAnomaly(comment, expiryDate.trim() || undefined)
+    onAnomaly(comment, toStoredDate(expiryDate))
   }
 
   function handleMarkAbsent() {
@@ -109,7 +134,7 @@ export function useItemCard(
   const cardRotate = isDownDominant ? 0 : dragX * ROTATION_FACTOR
 
   return {
-    expiryDate, setExpiryDate,
+    expiryDate, setExpiryDate, clearExpiryDate,
     dateError,
     isModalOpen, setIsModalOpen,
     dragX, dragY, isDragging,

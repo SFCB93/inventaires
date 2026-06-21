@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { loadInventoryUseCase, submitControlUseCase } from './use-cases'
+import { loadInventoryUseCase, submitControlUseCase, listRecentControlsUseCase } from './use-cases'
 import { validatorRepository } from '../data/repository'
 import type { ControlEmailContext, ControlSubmission } from './types'
 
 vi.mock('../data/repository', () => ({
   validatorRepository: {
     loadInventory: vi.fn(),
+    loadLastExpiryDates: vi.fn(),
     saveControl: vi.fn(),
     getInventoryAssociationId: vi.fn(),
     getAssociationEmails: vi.fn(),
+    listRecentControls: vi.fn(),
   },
 }))
 
@@ -46,7 +48,10 @@ const mockEmailContext: ControlEmailContext = {
 }
 
 describe('loadInventoryUseCase', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(validatorRepository.loadLastExpiryDates).mockResolvedValue({ ok: true, value: {} })
+  })
 
   it("retourne l'inventaire et ses emplacements quand tout se passe bien", async () => {
     vi.mocked(validatorRepository.loadInventory).mockResolvedValue(mockInventoryResult)
@@ -72,6 +77,37 @@ describe('loadInventoryUseCase', () => {
     const result = await loadInventoryUseCase('inv-inconnu')
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error).toContain("n'existe pas")
+  })
+})
+
+describe('listRecentControlsUseCase', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it("retourne une erreur si l'identifiant est vide", async () => {
+    const result = await listRecentControlsUseCase('   ')
+    expect(result.ok).toBe(false)
+    expect(validatorRepository.listRecentControls).not.toHaveBeenCalled()
+  })
+
+  it('retourne les contrôles récents du repository', async () => {
+    const mockControls = [{
+      id: 'ctrl-1',
+      verifierName: 'Jean Dupont',
+      submittedAt: new Date('2026-06-15'),
+      anomalyCount: 1,
+      anomalies: [{ itemName: 'Défibrillateur', compartmentName: 'Poche', comment: 'Absent' }],
+      expiryDates: [],
+    }]
+    vi.mocked(validatorRepository.listRecentControls).mockResolvedValue({ ok: true, value: mockControls })
+    const result = await listRecentControlsUseCase('inv-1')
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.value).toHaveLength(1)
+  })
+
+  it("propage l'erreur du repository", async () => {
+    vi.mocked(validatorRepository.listRecentControls).mockResolvedValue({ ok: false, error: 'Firestore error' })
+    const result = await listRecentControlsUseCase('inv-1')
+    expect(result.ok).toBe(false)
   })
 })
 

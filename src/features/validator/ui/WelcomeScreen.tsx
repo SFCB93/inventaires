@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import type { Inventory } from '../domain/types'
+import { SwipeTutorial } from './SwipeTutorial'
 
 interface WelcomeScreenProps {
   inventory: Inventory
@@ -41,6 +43,8 @@ export function WelcomeScreen({
         <p className="text-slate-500 text-sm text-center mb-8">
           Vérifiez chaque matériel emplacement par emplacement.
         </p>
+
+        <SwipeTutorial />
       </div>
 
       <div className="px-6 pb-12">
@@ -52,6 +56,12 @@ export function WelcomeScreen({
         >
           Commencer le contrôle
         </button>
+        <Link
+          href={`/inventaire/${inventory.id}/controles`}
+          className="block text-center text-slate-400 text-sm mt-4 py-2"
+        >
+          Voir les derniers contrôles →
+        </Link>
       </div>
     </div>
   )
