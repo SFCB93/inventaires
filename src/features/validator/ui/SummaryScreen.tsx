@@ -4,6 +4,7 @@
 
 import type { CompartmentWithItems, ItemResult } from '../domain/types'
 import { useSummaryScreen } from './hooks/useSummaryScreen'
+import { formatDate } from '@/shared/lib/format'
 
 interface SummaryScreenProps {
   compartments: CompartmentWithItems[]
@@ -11,11 +12,6 @@ interface SummaryScreenProps {
   onSubmit: (verifierName: string) => void
   isSubmitting: boolean
   error?: string
-}
-
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
 }
 
 export function SummaryScreen({ compartments, results, onSubmit, isSubmitting, error }: SummaryScreenProps) {

@@ -113,14 +113,10 @@ export const validatorRepository = {
       const snap = await adminDb
         .collection("controles")
         .where("inventoryId", "==", inventoryId)
+        .orderBy("submittedAt", "desc")
+        .limit(3)
         .get();
       const sorted = snap.docs
-        .sort((a, b) => {
-          const aMs = a.data().submittedAt?.toMillis?.() ?? 0
-          const bMs = b.data().submittedAt?.toMillis?.() ?? 0
-          return bMs - aMs
-        })
-        .slice(0, 3)
       const dates: Record<string, string> = {};
       for (const doc of sorted) {
         const results = doc.data().results as Array<{ itemId: string; expiryDate: string | null }>;

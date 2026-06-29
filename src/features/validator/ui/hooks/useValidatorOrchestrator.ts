@@ -54,6 +54,7 @@ export function useValidatorOrchestrator(
     const nextItem = store.itemIndex + 1
     if (nextItem < currentCompartment.items.length) {
       store.setItemIndex(nextItem)
+      store.setStep('item')
       return
     }
     const nextCompartment = store.compartmentIndex + 1

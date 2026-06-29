@@ -1,14 +1,10 @@
 import { Body, Container, Head, Heading, Hr, Html, Section, Text } from '@react-email/components'
 import type { ExpiryAlertItem } from '@/shared/domain/alerts'
+import { formatDate } from '@/shared/lib/format'
 
 interface ExpiryAlertEmailProps {
   expired: ExpiryAlertItem[]
   atRisk: ExpiryAlertItem[]
-}
-
-function formatDate(iso: string) {
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
 }
 
 function ItemRow({ item }: { item: ExpiryAlertItem }) {

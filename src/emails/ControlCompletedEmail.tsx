@@ -8,10 +8,7 @@ import {
   Section,
   Text,
 } from '@react-email/components'
-function formatDate(iso: string) {
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
-}
+import { formatDate } from '@/shared/lib/format'
 
 function expiryStatus(iso: string, alertThresholdDays: number): 'expired' | 'at-risk' | 'ok' {
   const date = new Date(iso)

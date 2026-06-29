@@ -1,6 +1,7 @@
 "use client";
 
 import type { ExpiryAlertItem, AnomalyAlertItem } from "../domain/types";
+import { formatDate } from "@/shared/lib/format";
 
 interface AnomalyAlertsBlockProps {
   anomalies: AnomalyAlertItem[];
@@ -8,11 +9,6 @@ interface AnomalyAlertsBlockProps {
   atRisk: ExpiryAlertItem[];
   onCorrect: (item: ExpiryAlertItem) => void;
   onCorrectAnomaly: (item: AnomalyAlertItem) => void;
-}
-
-function formatDate(iso: string) {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
 }
 
 function AnomalyRow({
