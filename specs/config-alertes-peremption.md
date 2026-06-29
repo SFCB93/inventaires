@@ -1,3 +1,9 @@
+---
+feature: config-alertes-peremption
+status: implemented
+updated: 2026-06-29
+---
+
 # Spec — Configuration des alertes de péremption
 
 ## Objectif

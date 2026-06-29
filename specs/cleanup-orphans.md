@@ -1,3 +1,9 @@
+---
+feature: cleanup-orphans
+status: implemented
+updated: 2026-06-29
+---
+
 # Spec — Nettoyage quotidien des documents orphelins
 
 ## Objectif

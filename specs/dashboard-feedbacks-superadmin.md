@@ -1,3 +1,9 @@
+---
+feature: dashboard-feedbacks-superadmin
+status: implemented
+updated: 2026-06-29
+---
+
 # Spec — Dashboard feedbacks (superadmin)
 
 ## Objectif

@@ -1,3 +1,9 @@
+---
+feature: gestion-inventaires
+status: implemented
+updated: 2026-06-29
+---
+
 # Spec — Gestion des inventaires, emplacements et matériels (backoffice)
 
 ## Objectif

@@ -1,3 +1,9 @@
+---
+feature: controles
+status: implemented
+updated: 2026-06-29
+---
+
 # Spec — Gestion des vérifications (contrôles)
 
 ## Objectif

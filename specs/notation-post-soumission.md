@@ -1,3 +1,9 @@
+---
+feature: notation-post-soumission
+status: implemented
+updated: 2026-06-29
+---
+
 # Spec — Notation post-soumission
 
 ## Objectif

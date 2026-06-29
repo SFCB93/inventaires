@@ -1,3 +1,9 @@
+---
+feature: retour-arriere-controle
+status: implemented
+updated: 2026-06-29
+---
+
 # Spec — Retour arrière pendant un contrôle
 
 ## Contexte

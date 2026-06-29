@@ -1,3 +1,9 @@
+---
+feature: qrcode
+status: implemented
+updated: 2026-06-29
+---
+
 # Spec — QR Code par inventaire
 
 ## Objectif
