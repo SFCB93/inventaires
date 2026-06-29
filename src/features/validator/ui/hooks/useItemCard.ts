@@ -36,8 +36,7 @@ export function useItemCard(
   }
 
   function clearExpiryDate() {
-    setExpiryDateRaw('')
-    if (dateError) setDateError(false)
+    setExpiryDate('')
   }
 
   function toStoredDate(value: string): string | undefined {

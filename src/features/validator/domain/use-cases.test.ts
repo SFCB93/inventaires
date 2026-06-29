@@ -93,7 +93,7 @@ describe('listRecentControlsUseCase', () => {
     const mockControls = [{
       id: 'ctrl-1',
       verifierName: 'Jean Dupont',
-      submittedAt: new Date('2026-06-15'),
+      submittedAt: '2026-06-15T00:00:00.000Z',
       anomalyCount: 1,
       anomalies: [{ itemName: 'Défibrillateur', compartmentName: 'Poche', comment: 'Absent' }],
       expiryDates: [],

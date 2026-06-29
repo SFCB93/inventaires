@@ -17,11 +17,15 @@ export default async function ControlesPage({ params }: Props) {
     return <ErrorScreen message={inventoryResult.error} />
   }
 
+  if (!controlsResult.ok) {
+    return <ErrorScreen message={controlsResult.error} />
+  }
+
   return (
     <RecentControlsPage
       inventoryId={inventaireId}
       inventoryName={inventoryResult.value.inventory.name}
-      controls={controlsResult.ok ? controlsResult.value : []}
+      controls={controlsResult.value}
     />
   )
 }

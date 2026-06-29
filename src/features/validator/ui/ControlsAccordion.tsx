@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import type { PublicControlSummary } from '../domain/types'
 
-function formatDate(date: Date): string {
+const EXPIRY_FORMATTER = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
+
+function formatSubmittedAt(iso: string): string {
+  const date = new Date(iso)
   return (
     date.toLocaleDateString('fr-FR') +
     ' à ' +
@@ -13,9 +16,7 @@ function formatDate(date: Date): string {
 
 function formatExpiryDate(date: string): string {
   const [year, month] = date.split('-')
-  return new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(
-    new Date(parseInt(year), parseInt(month) - 1, 1)
-  )
+  return EXPIRY_FORMATTER.format(new Date(parseInt(year), parseInt(month) - 1, 1))
 }
 
 function AnomalyBadge({ count }: { count: number }) {
@@ -66,7 +67,7 @@ export function ControlsAccordion({ controls }: { controls: PublicControlSummary
             >
               <div className="min-w-0">
                 <p className="font-semibold text-slate-900 truncate">{control.verifierName}</p>
-                <p className="text-slate-500 text-sm mt-0.5">{formatDate(control.submittedAt)}</p>
+                <p className="text-slate-500 text-sm mt-0.5">{formatSubmittedAt(control.submittedAt)}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <AnomalyBadge count={control.anomalyCount} />

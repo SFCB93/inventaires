@@ -195,16 +195,16 @@ export const validatorRepository = {
     try {
       type RawResult = { itemId: string; compartmentId: string; status: string; comment?: string | null; expiryDate?: string | null }
 
-      const snap = await adminDb.collection('controles').where('inventoryId', '==', inventoryId).get()
-
-      const recentDocs = snap.docs
-        .slice()
-        .sort((a, b) => (b.data().submittedAt?.toMillis?.() ?? 0) - (a.data().submittedAt?.toMillis?.() ?? 0))
-        .slice(0, RECENT_CONTROLS_LIMIT)
+      const snap = await adminDb
+        .collection('controles')
+        .where('inventoryId', '==', inventoryId)
+        .orderBy('submittedAt', 'desc')
+        .limit(RECENT_CONTROLS_LIMIT)
+        .get()
 
       const itemIds = new Set<string>()
       const compartmentIds = new Set<string>()
-      for (const doc of recentDocs) {
+      for (const doc of snap.docs) {
         for (const r of (doc.data().results ?? []) as RawResult[]) {
           if (r.status === 'anomaly' || r.expiryDate) {
             itemIds.add(r.itemId)
@@ -215,41 +215,38 @@ export const validatorRepository = {
 
       const itemNames = new Map<string, string>()
       const compartmentNames = new Map<string, string>()
-      const tasks: Promise<void>[] = []
-      if (itemIds.size > 0) {
-        tasks.push(
-          adminDb.getAll(...[...itemIds].map(id => adminDb.collection('materiels').doc(id)))
-            .then(docs => { for (const doc of docs) { if (doc.exists) itemNames.set(doc.id, doc.data()!.name as string) } })
-        )
-      }
-      if (compartmentIds.size > 0) {
-        tasks.push(
-          adminDb.getAll(...[...compartmentIds].map(id => adminDb.collection('emplacements').doc(id)))
-            .then(docs => { for (const doc of docs) { if (doc.exists) compartmentNames.set(doc.id, doc.data()!.name as string) } })
-        )
-      }
-      await Promise.all(tasks)
+      await Promise.all([
+        itemIds.size > 0
+          ? adminDb.getAll(...[...itemIds].map(id => adminDb.collection('materiels').doc(id)))
+              .then(docs => { for (const doc of docs) { if (doc.exists) itemNames.set(doc.id, doc.data()!.name as string) } })
+          : null,
+        compartmentIds.size > 0
+          ? adminDb.getAll(...[...compartmentIds].map(id => adminDb.collection('emplacements').doc(id)))
+              .then(docs => { for (const doc of docs) { if (doc.exists) compartmentNames.set(doc.id, doc.data()!.name as string) } })
+          : null,
+      ])
 
-      const controls = recentDocs.map((doc) => {
+      const controls = snap.docs.map((doc) => {
         const data = doc.data()
         const results = (data.results ?? []) as RawResult[]
+        const anomalies = results
+          .filter(r => r.status === 'anomaly')
+          .map(r => ({
+            itemName: itemNames.get(r.itemId) ?? '(matériel supprimé)',
+            compartmentName: compartmentNames.get(r.compartmentId) ?? '(emplacement supprimé)',
+            comment: r.comment ?? '',
+          }))
         return {
           id: doc.id,
           verifierName: data.verifierName as string,
-          submittedAt: data.submittedAt?.toDate?.() ?? new Date(),
-          anomalyCount: results.filter(r => r.status === 'anomaly').length,
-          anomalies: results
-            .filter(r => r.status === 'anomaly')
-            .map(r => ({
-              itemName: itemNames.get(r.itemId) ?? r.itemId,
-              compartmentName: compartmentNames.get(r.compartmentId) ?? r.compartmentId,
-              comment: r.comment ?? '',
-            })),
+          submittedAt: data.submittedAt?.toDate?.()?.toISOString() ?? new Date(0).toISOString(),
+          anomalyCount: anomalies.length,
+          anomalies,
           expiryDates: results
             .filter(r => r.expiryDate)
             .map(r => ({
-              itemName: itemNames.get(r.itemId) ?? r.itemId,
-              compartmentName: compartmentNames.get(r.compartmentId) ?? r.compartmentId,
+              itemName: itemNames.get(r.itemId) ?? '(matériel supprimé)',
+              compartmentName: compartmentNames.get(r.compartmentId) ?? '(emplacement supprimé)',
               date: r.expiryDate!,
             })),
         }

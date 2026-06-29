@@ -51,7 +51,7 @@ export type FeedbackSubmission = {
 export type PublicControlSummary = {
   id: string
   verifierName: string
-  submittedAt: Date
+  submittedAt: string
   anomalyCount: number
   anomalies: { itemName: string; compartmentName: string; comment: string }[]
   expiryDates: { itemName: string; compartmentName: string; date: string }[]

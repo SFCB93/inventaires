@@ -7,7 +7,7 @@ import type { PublicControlSummary } from '../domain/types'
 const makeControl = (overrides: Partial<PublicControlSummary> = {}): PublicControlSummary => ({
   id: 'ctrl-1',
   verifierName: 'Jean Dupont',
-  submittedAt: new Date('2026-06-15T10:30:00'),
+  submittedAt: '2026-06-15T10:30:00.000Z',
   anomalyCount: 0,
   anomalies: [],
   expiryDates: [],
