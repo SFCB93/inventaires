@@ -11,14 +11,15 @@ interface AnomalyModalProps {
 }
 
 export function AnomalyModal({ isOpen, onConfirm, onCancel }: AnomalyModalProps) {
-  const { comment, setComment, error, handleConfirm, handleCancel } =
+  const { comment, setComment, error, handleConfirm, handleCancel, handleTouchStart, handleTouchEnd, handleTouchCancel } =
     useAnomalyModal(isOpen, onConfirm, onCancel)
 
   if (!isOpen) return null
 
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="anomaly-modal-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
+      onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchCancel}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm touch-none">
       <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-2 pb-10">
         <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5 mt-3" aria-hidden="true" />
 

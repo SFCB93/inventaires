@@ -1,7 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AnomalyModal } from './AnomalyModal'
+
+function swipeDown(dialog: Element, deltaY: number, startElement: Element = dialog) {
+  fireEvent.touchStart(startElement, { touches: [{ clientY: 0 }] })
+  fireEvent.touchEnd(dialog, { changedTouches: [{ clientY: deltaY }] })
+}
 
 describe('AnomalyModal', () => {
   it("ne s'affiche pas quand isOpen est false", () => {
@@ -69,5 +74,32 @@ describe('AnomalyModal', () => {
 
     rerender(<AnomalyModal isOpen={true} onConfirm={vi.fn()} onCancel={vi.fn()} />)
     expect(screen.getByTestId('textarea-anomaly')).toHaveValue('')
+  })
+
+  it("appelle onCancel après un swipe vers le bas suffisant", () => {
+    const onCancel = vi.fn()
+    render(<AnomalyModal isOpen={true} onConfirm={vi.fn()} onCancel={onCancel} />)
+
+    swipeDown(screen.getByRole('dialog'), 150)
+
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+
+  it("ignore un swipe vers le bas trop court", () => {
+    const onCancel = vi.fn()
+    render(<AnomalyModal isOpen={true} onConfirm={vi.fn()} onCancel={onCancel} />)
+
+    swipeDown(screen.getByRole('dialog'), 30)
+
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  it("ignore un swipe qui démarre dans le textarea", () => {
+    const onCancel = vi.fn()
+    render(<AnomalyModal isOpen={true} onConfirm={vi.fn()} onCancel={onCancel} />)
+
+    swipeDown(screen.getByRole('dialog'), 150, screen.getByTestId('textarea-anomaly'))
+
+    expect(onCancel).not.toHaveBeenCalled()
   })
 })
