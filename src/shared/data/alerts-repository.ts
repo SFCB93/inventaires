@@ -48,23 +48,42 @@ export async function getActiveAlerts(
   associationId: string,
   providedThreshold?: number,
   includeAnomalies = true,
+  inventoryId?: string,
 ): Promise<Result<ActiveAlertsReport>> {
   try {
-    const [inventoriesSnap, thresholdDays] = await Promise.all([
-      adminDb
-        .collection("inventaires")
-        .where("associationId", "==", associationId)
-        .get(),
+    const thresholdPromise =
       providedThreshold !== undefined
         ? Promise.resolve(providedThreshold)
-        : fetchAlertThreshold(associationId),
-    ]);
-    if (inventoriesSnap.empty)
-      return ok({ anomalies: [], expired: [], atRisk: [] });
-    const inventoryIds = inventoriesSnap.docs.map((d) => d.id);
-    const inventoryNames = new Map(
-      inventoriesSnap.docs.map((d) => [d.id, (d.data().name as string) ?? ""]),
-    );
+        : fetchAlertThreshold(associationId);
+
+    let inventoryIds: string[];
+    let inventoryNames: Map<string, string>;
+    let thresholdDays: number;
+    if (inventoryId) {
+      const [inventoryDoc, threshold] = await Promise.all([
+        adminDb.collection("inventaires").doc(inventoryId).get(),
+        thresholdPromise,
+      ]);
+      if (!inventoryDoc.exists) return ok({ anomalies: [], expired: [], atRisk: [] });
+      inventoryIds = [inventoryId];
+      inventoryNames = new Map([[inventoryId, (inventoryDoc.data()?.name as string) ?? ""]]);
+      thresholdDays = threshold;
+    } else {
+      const [inventoriesSnap, threshold] = await Promise.all([
+        adminDb
+          .collection("inventaires")
+          .where("associationId", "==", associationId)
+          .get(),
+        thresholdPromise,
+      ]);
+      if (inventoriesSnap.empty)
+        return ok({ anomalies: [], expired: [], atRisk: [] });
+      inventoryIds = inventoriesSnap.docs.map((d) => d.id);
+      inventoryNames = new Map(
+        inventoriesSnap.docs.map((d) => [d.id, (d.data().name as string) ?? ""]),
+      );
+      thresholdDays = threshold;
+    }
 
     type Entry = {
       itemId: string;
@@ -132,10 +151,15 @@ export async function getActiveAlerts(
       }
     }
 
-    const correctionsSnap = await adminDb
-      .collection("corrections")
-      .where("associationId", "==", associationId)
-      .get();
+    const correctionsSnap = inventoryId
+      ? await adminDb
+          .collection("corrections")
+          .where("inventoryId", "==", inventoryId)
+          .get()
+      : await adminDb
+          .collection("corrections")
+          .where("associationId", "==", associationId)
+          .get();
     for (const doc of correctionsSnap.docs) {
       const d = doc.data();
       const key = `${d.itemId}|${d.inventoryId}`;
@@ -173,10 +197,15 @@ export async function getActiveAlerts(
         (e) => e.status === "anomaly",
       );
       if (activeAnomalyEntries.length > 0) {
-        const anomalyCorrectionsSnap = await adminDb
-          .collection("anomaly_corrections")
-          .where("associationId", "==", associationId)
-          .get();
+        const anomalyCorrectionsSnap = inventoryId
+          ? await adminDb
+              .collection("anomaly_corrections")
+              .where("inventoryId", "==", inventoryId)
+              .get()
+          : await adminDb
+              .collection("anomaly_corrections")
+              .where("associationId", "==", associationId)
+              .get();
         const latestAnomalyCorrection = new Map<string, number>();
         for (const doc of anomalyCorrectionsSnap.docs) {
           const d = doc.data();

@@ -20,6 +20,12 @@ export async function getActiveAlertsUseCase(associationId: string, thresholdDay
   return getActiveAlerts(associationId, thresholdDays)
 }
 
+export async function getInventoryActiveAlertsUseCase(inventoryId: string, associationId: string, thresholdDays?: number): Promise<Result<ActiveAlertsReport>> {
+  if (!inventoryId) return err('Identifiant d\'inventaire manquant.')
+  if (!associationId) return err('Association non identifiée.')
+  return getActiveAlerts(associationId, thresholdDays, true, inventoryId)
+}
+
 export async function getAlertThresholdUseCase(associationId: string): Promise<number> {
   return controlsRepository.getAlertThreshold(associationId)
 }
@@ -45,4 +51,27 @@ export async function createCorrectionUseCase(
   cutoff.setDate(cutoff.getDate() + thresholdDays)
   if (new Date(input.newExpiryDate) <= cutoff) return err(`Cette date ne résout pas l'alerte (doit être > J+${thresholdDays}).`)
   return controlsRepository.createCorrection(input)
+}
+
+export async function createPublicAnomalyCorrectionUseCase(
+  input: { itemId: string; inventoryId: string; correctedBy: string },
+): Promise<Result<void>> {
+  if (!input.correctedBy.trim()) return err('Le nom du correcteur est obligatoire.')
+  const assocResult = await controlsRepository.getInventoryAssociationId(input.inventoryId)
+  if (!assocResult.ok) return assocResult
+  return controlsRepository.createAnomalyCorrection({ ...input, associationId: assocResult.value })
+}
+
+export async function createPublicCorrectionUseCase(
+  input: { itemId: string; inventoryId: string; newExpiryDate: string; correctedBy: string },
+): Promise<Result<void>> {
+  if (!input.correctedBy.trim()) return err('Le nom du correcteur est obligatoire.')
+  if (!input.newExpiryDate) return err('La date est obligatoire.')
+  const assocResult = await controlsRepository.getInventoryAssociationId(input.inventoryId)
+  if (!assocResult.ok) return assocResult
+  const thresholdDays = await controlsRepository.getAlertThreshold(assocResult.value)
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() + thresholdDays)
+  if (new Date(input.newExpiryDate) <= cutoff) return err(`Cette date ne résout pas l'alerte (doit être > J+${thresholdDays}).`)
+  return controlsRepository.createCorrection({ ...input, associationId: assocResult.value })
 }

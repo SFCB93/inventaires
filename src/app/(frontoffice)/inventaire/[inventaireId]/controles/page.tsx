@@ -1,4 +1,5 @@
 import { loadInventoryUseCase, listRecentControlsUseCase } from '@/features/validator/domain/use-cases'
+import { getInventoryActiveAlertsUseCase, getAlertThresholdUseCase } from '@/features/controls/domain/use-cases'
 import { RecentControlsPage } from '@/features/validator/ui/RecentControlsPage'
 import { ErrorScreen } from '@/features/validator/ui/ErrorScreen'
 
@@ -21,11 +22,18 @@ export default async function ControlesPage({ params }: Props) {
     return <ErrorScreen message={controlsResult.error} />
   }
 
+  const associationId = inventoryResult.value.inventory.associationId
+  const alertThresholdDays = await getAlertThresholdUseCase(associationId)
+  const alertsResult = await getInventoryActiveAlertsUseCase(inventaireId, associationId, alertThresholdDays)
+  const alerts = alertsResult.ok ? alertsResult.value : { anomalies: [], expired: [], atRisk: [] }
+
   return (
     <RecentControlsPage
       inventoryId={inventaireId}
       inventoryName={inventoryResult.value.inventory.name}
       controls={controlsResult.value}
+      alerts={alerts}
+      alertThresholdDays={alertThresholdDays}
     />
   )
 }

@@ -11,6 +11,14 @@ import type {
   CreateCorrectionInput, CreateAnomalyCorrectionInput,
 } from '../domain/types'
 
+type RawControlResult = {
+  itemId: string
+  compartmentId: string
+  status: 'present' | 'anomaly'
+  comment: string | null
+  expiryDate: string | null
+}
+
 async function getAlertThreshold(associationId: string): Promise<number> {
   try {
     const doc = await adminDb.collection('associations').doc(associationId).get()
@@ -50,7 +58,7 @@ export const controlsRepository = {
       }
       const controls: ControlSummary[] = controlDocs.map(doc => {
         const data = doc.data()
-        const results: any[] = data.results ?? []
+        const results: RawControlResult[] = data.results ?? []
         const submittedAt = data.submittedAt?.toDate() ?? new Date()
         const riskAt = new Date(submittedAt); riskAt.setDate(riskAt.getDate() + thresholdDays)
         return {
@@ -86,9 +94,9 @@ export const controlsRepository = {
       const data = controlDoc.data()!
       // Reject if associationId stored and doesn't match (legacy docs without field are allowed through)
       if (data.associationId && data.associationId !== associationId) return err('Non autorisé.')
-      const rawResults: any[] = data.results ?? []
-      const itemIds = [...new Set(rawResults.map(r => r.itemId as string))]
-      const compartmentIds = [...new Set(rawResults.map(r => r.compartmentId as string))]
+      const rawResults: RawControlResult[] = data.results ?? []
+      const itemIds = [...new Set(rawResults.map(r => r.itemId))]
+      const compartmentIds = [...new Set(rawResults.map(r => r.compartmentId))]
       const [itemNames, compartmentNames, correctionsSnap, inventoryDoc] = await Promise.all([
         batchGetNames('materiels', itemIds),
         batchGetNames('emplacements', compartmentIds),
@@ -108,7 +116,7 @@ export const controlsRepository = {
       }
       const now = startOfToday()
       const risk = todayPlusDays(thresholdDays)
-      function computeStatus(r: any): DomainItemResult['currentExpiryStatus'] {
+      function computeStatus(r: RawControlResult): DomainItemResult['currentExpiryStatus'] {
         if (!r.expiryDate) return null
         const correction = bestCorrectionByItem.get(r.itemId)
         if (correction && new Date(correction) > risk) return 'fixed'
@@ -139,6 +147,16 @@ export const controlsRepository = {
       return doc.exists && doc.data()?.associationId === associationId
     } catch {
       return false
+    }
+  },
+
+  async getInventoryAssociationId(inventoryId: string): Promise<Result<string>> {
+    try {
+      const doc = await adminDb.collection('inventaires').doc(inventoryId).get()
+      if (!doc.exists) return err('Inventaire introuvable.')
+      return ok(doc.data()!.associationId as string)
+    } catch (error) {
+      return err(`Impossible de lire l'inventaire. Erreur: ${(error as Error).message}`)
     }
   },
 

@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { listControlsUseCase, getControlDetailUseCase, getActiveAlertsUseCase, createCorrectionUseCase, createAnomalyCorrectionUseCase } from './use-cases'
+import {
+  listControlsUseCase, getControlDetailUseCase, getActiveAlertsUseCase, getInventoryActiveAlertsUseCase,
+  createCorrectionUseCase, createAnomalyCorrectionUseCase,
+  createPublicCorrectionUseCase, createPublicAnomalyCorrectionUseCase,
+} from './use-cases'
 import { controlsRepository } from '../data/repository'
 import { getActiveAlerts } from '@/shared/data/alerts-repository'
 import type { AuthenticatedUser } from '@/shared/lib/auth'
@@ -18,6 +22,7 @@ vi.mock('../data/repository', () => ({
     getAlertThreshold: vi.fn(),
     createAnomalyCorrection: vi.fn(),
     verifyInventoryOwnership: vi.fn(),
+    getInventoryAssociationId: vi.fn(),
   },
 }))
 
@@ -82,6 +87,28 @@ describe('getActiveAlertsUseCase', () => {
     const result = await getActiveAlertsUseCase('')
     expect(result.ok).toBe(false)
     expect(getActiveAlerts).not.toHaveBeenCalled()
+  })
+})
+
+describe('getInventoryActiveAlertsUseCase', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it("retourne une erreur si l'inventoryId est vide", async () => {
+    const result = await getInventoryActiveAlertsUseCase('', 'asso-1')
+    expect(result.ok).toBe(false)
+    expect(getActiveAlerts).not.toHaveBeenCalled()
+  })
+
+  it("retourne une erreur si l'associationId est vide", async () => {
+    const result = await getInventoryActiveAlertsUseCase('inv-1', '')
+    expect(result.ok).toBe(false)
+    expect(getActiveAlerts).not.toHaveBeenCalled()
+  })
+
+  it('scope les alertes actives sur cet inventaire', async () => {
+    vi.mocked(getActiveAlerts).mockResolvedValue({ ok: true, value: { anomalies: [], expired: [], atRisk: [] } })
+    await getInventoryActiveAlertsUseCase('inv-1', 'asso-1', 30)
+    expect(getActiveAlerts).toHaveBeenCalledWith('asso-1', 30, true, 'inv-1')
   })
 })
 
@@ -168,6 +195,94 @@ describe('createAnomalyCorrectionUseCase', () => {
   it("propage l'erreur du repository si la sauvegarde échoue", async () => {
     vi.mocked(controlsRepository.createAnomalyCorrection).mockResolvedValue({ ok: false, error: 'Erreur Firestore' })
     const result = await createAnomalyCorrectionUseCase(mockAnomalyInput, mockUser)
+    expect(result.ok).toBe(false)
+  })
+})
+
+describe('createPublicAnomalyCorrectionUseCase', () => {
+  const publicInput = { itemId: 'item-1', inventoryId: 'inv-1', correctedBy: 'Jean' }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(controlsRepository.getInventoryAssociationId).mockResolvedValue({ ok: true, value: 'asso-1' })
+    vi.mocked(controlsRepository.createAnomalyCorrection).mockResolvedValue({ ok: true, value: undefined })
+  })
+
+  it("retourne une erreur si le nom du correcteur est vide", async () => {
+    const result = await createPublicAnomalyCorrectionUseCase({ ...publicInput, correctedBy: '   ' })
+    expect(result.ok).toBe(false)
+    expect(controlsRepository.getInventoryAssociationId).not.toHaveBeenCalled()
+    expect(controlsRepository.createAnomalyCorrection).not.toHaveBeenCalled()
+  })
+
+  it("propage l'erreur si l'inventaire est introuvable", async () => {
+    vi.mocked(controlsRepository.getInventoryAssociationId).mockResolvedValue({ ok: false, error: 'Inventaire introuvable.' })
+    const result = await createPublicAnomalyCorrectionUseCase(publicInput)
+    expect(result.ok).toBe(false)
+    expect(controlsRepository.createAnomalyCorrection).not.toHaveBeenCalled()
+  })
+
+  it("résout l'associationId depuis l'inventaire et enregistre la correction", async () => {
+    const result = await createPublicAnomalyCorrectionUseCase(publicInput)
+    expect(result.ok).toBe(true)
+    expect(controlsRepository.getInventoryAssociationId).toHaveBeenCalledWith('inv-1')
+    expect(controlsRepository.createAnomalyCorrection).toHaveBeenCalledWith({ ...publicInput, associationId: 'asso-1' })
+  })
+
+  it("propage l'erreur du repository si la sauvegarde échoue", async () => {
+    vi.mocked(controlsRepository.createAnomalyCorrection).mockResolvedValue({ ok: false, error: 'Erreur Firestore' })
+    const result = await createPublicAnomalyCorrectionUseCase(publicInput)
+    expect(result.ok).toBe(false)
+  })
+})
+
+describe('createPublicCorrectionUseCase', () => {
+  const publicInput = { itemId: 'item-1', inventoryId: 'inv-1', newExpiryDate: dateInDays(45), correctedBy: 'Jean' }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(controlsRepository.getInventoryAssociationId).mockResolvedValue({ ok: true, value: 'asso-1' })
+    vi.mocked(controlsRepository.getAlertThreshold).mockResolvedValue(30)
+    vi.mocked(controlsRepository.createCorrection).mockResolvedValue({ ok: true, value: undefined })
+  })
+
+  it("retourne une erreur si le nom du correcteur est vide", async () => {
+    const result = await createPublicCorrectionUseCase({ ...publicInput, correctedBy: '  ' })
+    expect(result.ok).toBe(false)
+    expect(controlsRepository.getInventoryAssociationId).not.toHaveBeenCalled()
+    expect(controlsRepository.createCorrection).not.toHaveBeenCalled()
+  })
+
+  it('retourne une erreur si la date est vide', async () => {
+    const result = await createPublicCorrectionUseCase({ ...publicInput, newExpiryDate: '' })
+    expect(result.ok).toBe(false)
+    expect(controlsRepository.createCorrection).not.toHaveBeenCalled()
+  })
+
+  it("propage l'erreur si l'inventaire est introuvable", async () => {
+    vi.mocked(controlsRepository.getInventoryAssociationId).mockResolvedValue({ ok: false, error: 'Inventaire introuvable.' })
+    const result = await createPublicCorrectionUseCase(publicInput)
+    expect(result.ok).toBe(false)
+    expect(controlsRepository.createCorrection).not.toHaveBeenCalled()
+  })
+
+  it("retourne une erreur si la date est dans moins de 30 jours", async () => {
+    const result = await createPublicCorrectionUseCase({ ...publicInput, newExpiryDate: dateInDays(15) })
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error).toContain('J+30')
+    expect(controlsRepository.createCorrection).not.toHaveBeenCalled()
+  })
+
+  it("résout l'associationId depuis l'inventaire et enregistre la correction", async () => {
+    const result = await createPublicCorrectionUseCase(publicInput)
+    expect(result.ok).toBe(true)
+    expect(controlsRepository.getInventoryAssociationId).toHaveBeenCalledWith('inv-1')
+    expect(controlsRepository.createCorrection).toHaveBeenCalledWith({ ...publicInput, associationId: 'asso-1' })
+  })
+
+  it("propage l'erreur du repository si la sauvegarde échoue", async () => {
+    vi.mocked(controlsRepository.createCorrection).mockResolvedValue({ ok: false, error: 'Erreur Firestore' })
+    const result = await createPublicCorrectionUseCase(publicInput)
     expect(result.ok).toBe(false)
   })
 })
