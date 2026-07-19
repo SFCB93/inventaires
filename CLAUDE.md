@@ -315,7 +315,6 @@ Un commit par feature ou sous-ensemble cohérent. Pas de commits fourre-tout.
 
 ### Remote
 
-- Remote : `git@github.com:Gguigre/inventaires.git` (branche `main`)
 - Chaque push sur `main` déclenche un déploiement automatique sur Vercel.
 - Ne jamais pousser un code qui casse le build.
 
