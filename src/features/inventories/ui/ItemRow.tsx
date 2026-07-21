@@ -33,7 +33,7 @@ export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
       style={style}
       data-testid={`item-row-${item.id}`}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white border
-                  transition-colors group
+                  transition-colors
                   ${isDragging
                     ? 'border-blue-300 shadow-lg z-10 relative opacity-60'
                     : 'border-slate-100 hover:border-slate-200'
@@ -99,9 +99,8 @@ export function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
         </span>
       )}
 
-      {/* Actions — visibles au hover uniquement */}
-      <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100
-                      transition-opacity">
+      {/* Actions */}
+      <div className="flex items-center gap-1 flex-shrink-0">
         <button
           type="button"
           data-testid={`btn-edit-item-${item.id}`}

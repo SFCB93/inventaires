@@ -31,26 +31,28 @@ export function FeedbacksPage({ feedbacks }: FeedbacksPageProps) {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Note</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Commentaire</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Auteur</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {feedbacks.map((row) => (
-                <tr key={row.id}>
-                  <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDate(row.submittedAt)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap"><Stars rating={row.rating} /></td>
-                  <td className="px-4 py-3 text-slate-700">{row.comment}</td>
-                  <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{row.verifierName || '—'}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Note</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Commentaire</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Auteur</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {feedbacks.map((row) => (
+                  <tr key={row.id}>
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDate(row.submittedAt)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Stars rating={row.rating} /></td>
+                    <td className="px-4 py-3 text-slate-700">{row.comment}</td>
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{row.verifierName || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

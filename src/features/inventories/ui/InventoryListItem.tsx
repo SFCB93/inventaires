@@ -14,16 +14,16 @@ export function InventoryListItem({ inventory, isDuplicating, duplicateError, on
       data-testid={`inventory-item-${inventory.id}`}
       className="flex flex-col gap-1 px-5 py-4 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-colors"
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="font-semibold text-slate-900">{inventory.name}</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-900 truncate">{inventory.name}</p>
           <p className="text-sm text-slate-400 mt-0.5">
             {inventory.compartmentCount === 0
               ? 'Aucun emplacement'
               : `${inventory.compartmentCount} emplacement${inventory.compartmentCount > 1 ? 's' : ''}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             type="button"
             data-testid={`btn-duplicate-inventory-${inventory.id}`}

@@ -21,13 +21,13 @@ export function NotificationEmailsEditor({
       ) : (
         <ul className="space-y-2">
           {emails.map((email) => (
-            <li key={email} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-              <span className="text-sm text-slate-700">{email}</span>
+            <li key={email} className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2">
+              <span className="text-sm text-slate-700 truncate min-w-0">{email}</span>
               <button
                 onClick={() => onRemove(email)}
                 aria-label={`Supprimer ${email}`}
                 data-testid={`btn-remove-email-${email}`}
-                className="text-slate-400 hover:text-red-600 transition-colors"
+                className="text-slate-400 hover:text-red-600 transition-colors flex-shrink-0"
               >
                 ✕
               </button>

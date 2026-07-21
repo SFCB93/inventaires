@@ -41,9 +41,9 @@ export function InventoryDetail(props: InventoryDetailProps) {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="flex items-start justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/inventaires" className="text-slate-400 hover:text-slate-600 transition-colors text-lg" aria-label="Retour à la liste">←</Link>
+      <div className="flex items-start justify-between gap-3 mb-8">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/dashboard/inventaires" className="text-slate-400 hover:text-slate-600 transition-colors text-lg flex-shrink-0" aria-label="Retour à la liste">←</Link>
           {isEditingName ? (
             <form onSubmit={handleRenameSubmit} className="flex items-center gap-2">
               <input
@@ -58,15 +58,15 @@ export function InventoryDetail(props: InventoryDetailProps) {
               <button type="button" onClick={handleRenameCancel} className="text-sm text-slate-400 hover:text-slate-600">Annuler</button>
             </form>
           ) : (
-            <button type="button" data-testid="btn-rename-inventory" onClick={() => setIsEditingName(true)} className="flex items-center gap-2 group" title="Cliquer pour renommer">
-              <h1 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{inventory.name}</h1>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-slate-300 group-hover:text-blue-400 transition-colors" aria-hidden="true">
+            <button type="button" data-testid="btn-rename-inventory" onClick={() => setIsEditingName(true)} className="flex items-center gap-2 group min-w-0" title="Cliquer pour renommer">
+              <h1 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{inventory.name}</h1>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-slate-300 group-hover:text-blue-400 transition-colors flex-shrink-0" aria-hidden="true">
                 <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
               </svg>
             </button>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <QrCodeButton onClick={onShowQrCode} />
           <button type="button" data-testid="btn-delete-inventory" onClick={() => setShowDeleteDialog(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">

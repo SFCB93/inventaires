@@ -23,8 +23,8 @@ export function AdminAccountsSection({ initialAccounts, currentUserUid }: AdminA
       <ul className="space-y-2 mb-4">
         {accounts.map((account) => (
           <li key={account.uid || account.email} className="flex items-center justify-between gap-3 py-1.5">
-            <div>
-              <p className="text-sm text-slate-800">{account.email}</p>
+            <div className="min-w-0">
+              <p className="text-sm text-slate-800 truncate">{account.email}</p>
               {account.createdAt && (
                 <p className="text-xs text-slate-400">
                   Créé le {account.createdAt.toLocaleDateString('fr-FR')}
@@ -37,7 +37,7 @@ export function AdminAccountsSection({ initialAccounts, currentUserUid }: AdminA
                 data-testid={`btn-remove-admin-${account.uid}`}
                 onClick={() => handleRemove(account.uid)}
                 disabled={removingUid === account.uid}
-                className="text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                className="text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0"
                 aria-label={`Supprimer le compte ${account.email}`}
               >
                 {removingUid === account.uid ? 'Suppression…' : 'Supprimer'}

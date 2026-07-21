@@ -47,49 +47,51 @@ export function ControlsListPage({ controls, alerts, alertThresholdDays }: Contr
       ) : (
         <>
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Inventaire</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Vérificateur</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Anomalies</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">À risque</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">À corriger</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedControls.map((control) => {
-                  const toFixCount = toFixByControl.get(control.id) ?? 0
-                  return (
-                  <tr key={control.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-900">
-                      <Link href={`/dashboard/controles/${control.id}`} className="hover:text-blue-600 transition-colors">
-                        {control.inventoryName}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{control.verifierName}</td>
-                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDateTime(control.submittedAt)}</td>
-                    <td className="px-4 py-3 text-center">
-                      {control.anomalyCount > 0
-                        ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold">{control.anomalyCount}</span>
-                        : <span className="text-slate-300">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {control.atRiskCount > 0
-                        ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">{control.atRiskCount}</span>
-                        : <span className="text-slate-300">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {toFixCount > 0
-                        ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{toFixCount}</span>
-                        : <span className="text-slate-300">—</span>}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Inventaire</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Vérificateur</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Anomalies</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">À risque</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">À corriger</th>
                   </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedControls.map((control) => {
+                    const toFixCount = toFixByControl.get(control.id) ?? 0
+                    return (
+                    <tr key={control.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-slate-900">
+                        <Link href={`/dashboard/controles/${control.id}`} className="hover:text-blue-600 transition-colors">
+                          {control.inventoryName}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{control.verifierName}</td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDateTime(control.submittedAt)}</td>
+                      <td className="px-4 py-3 text-center">
+                        {control.anomalyCount > 0
+                          ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold">{control.anomalyCount}</span>
+                          : <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {control.atRiskCount > 0
+                          ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">{control.atRiskCount}</span>
+                          : <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {toFixCount > 0
+                          ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{toFixCount}</span>
+                          : <span className="text-slate-300">—</span>}
+                      </td>
+                    </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {totalPages > 1 && (

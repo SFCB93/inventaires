@@ -49,33 +49,35 @@ export function SuperadminPage({ associations }: SuperadminPageProps) {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Association</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Email admin</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {associations.map((a) => (
-                <tr key={a.id}>
-                  <td className="px-4 py-3 font-medium text-slate-900">{a.name}</td>
-                  <td className="px-4 py-3 text-slate-500">{a.adminEmail}</td>
-                  <td className="px-4 py-3 text-right">
-                    <form action={enterAssociationAction.bind(null, a.id)}>
-                      <button
-                        type="submit"
-                        className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                      >
-                        Administrer →
-                      </button>
-                    </form>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Association</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Email admin</th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {associations.map((a) => (
+                  <tr key={a.id}>
+                    <td className="px-4 py-3 font-medium text-slate-900">{a.name}</td>
+                    <td className="px-4 py-3 text-slate-500">{a.adminEmail}</td>
+                    <td className="px-4 py-3 text-right">
+                      <form action={enterAssociationAction.bind(null, a.id)}>
+                        <button
+                          type="submit"
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                        >
+                          Administrer →
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
