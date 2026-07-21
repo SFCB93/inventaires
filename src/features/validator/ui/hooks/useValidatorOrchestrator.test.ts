@@ -116,6 +116,68 @@ describe('useValidatorOrchestrator — retour arrière', () => {
   })
 })
 
+const compartmentsWithExpiry = [
+  {
+    id: 'emp-1',
+    name: 'Poche avant',
+    order: 1,
+    items: [
+      { id: 'mat-a', name: 'A', photoUrl: '', hasExpiry: false, isCritical: false, order: 1 },
+      { id: 'mat-b', name: 'B', photoUrl: '', hasExpiry: true, isCritical: true, order: 2 },
+      { id: 'mat-c', name: 'C', photoUrl: '', hasExpiry: true, isCritical: false, order: 3 },
+      { id: 'mat-d', name: 'D', photoUrl: '', hasExpiry: false, isCritical: false, order: 4 },
+    ],
+  },
+]
+
+describe('useValidatorOrchestrator — mémorisation de la date au retour arrière', () => {
+  beforeEach(() => {
+    useValidatorStore.getState().init('')
+    vi.clearAllMocks()
+  })
+
+  it("mémorise la date dans draftExpiryDates à la validation d'un item", () => {
+    const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartmentsWithExpiry))
+    act(() => { result.current.recordResult({ status: 'present' }) }) // A
+    act(() => { result.current.recordResult({ status: 'present', expiryDate: '2027-06-01' }) }) // B
+    expect(result.current.draftExpiryDates['mat-b']).toBe('2027-06-01')
+  })
+
+  it("conserve la date d'un item après plusieurs retours arrière successifs (scénario A→B→C→D→A)", () => {
+    const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartmentsWithExpiry))
+    act(() => { result.current.recordResult({ status: 'present' }) }) // A
+    act(() => { result.current.recordResult({ status: 'present', expiryDate: '2027-06-01' }) }) // B
+    act(() => { result.current.recordResult({ status: 'present', expiryDate: '2027-07-01' }) }) // C
+    expect(result.current.currentItem?.id).toBe('mat-d')
+
+    act(() => { result.current.goBack() }) // retour sur C
+    act(() => { result.current.goBack() }) // retour sur B
+    act(() => { result.current.goBack() }) // retour sur A
+
+    expect(result.current.currentItem?.id).toBe('mat-a')
+    expect(result.current.results).toHaveLength(0)
+    expect(result.current.draftExpiryDates['mat-b']).toBe('2027-06-01')
+    expect(result.current.draftExpiryDates['mat-c']).toBe('2027-07-01')
+  })
+
+  it("remplace le brouillon si la date est modifiée en revisitant l'item", () => {
+    const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartmentsWithExpiry))
+    act(() => { result.current.recordResult({ status: 'present' }) }) // A
+    act(() => { result.current.recordResult({ status: 'present', expiryDate: '2027-06-01' }) }) // B
+    act(() => { result.current.goBack() }) // retour sur B
+    act(() => { result.current.recordResult({ status: 'present', expiryDate: '2027-08-01' }) }) // B revalidé
+    expect(result.current.draftExpiryDates['mat-b']).toBe('2027-08-01')
+  })
+
+  it("réinitialise draftExpiryDates avec le reste du store", () => {
+    const { result } = renderHook(() => useValidatorOrchestrator(inventory, compartmentsWithExpiry))
+    act(() => { result.current.recordResult({ status: 'present' }) }) // A
+    act(() => { result.current.recordResult({ status: 'present', expiryDate: '2027-06-01' }) }) // B
+    act(() => { useValidatorStore.getState().init('inv-1') })
+    expect(useValidatorStore.getState().draftExpiryDates).toEqual({})
+  })
+})
+
 describe('useValidatorOrchestrator — soumission et retry', () => {
   beforeEach(() => {
     useValidatorStore.getState().init('')

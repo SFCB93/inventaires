@@ -74,6 +74,7 @@ export function useValidatorOrchestrator(
       { itemId: currentItem.id, compartmentId: currentCompartment.id, ...partial },
     ]
     store.setResults(updated)
+    store.setDraftExpiryDate(currentItem.id, partial.expiryDate)
     advance(updated)
   }
 
@@ -116,6 +117,7 @@ export function useValidatorOrchestrator(
   return {
     step,
     results: store.results,
+    draftExpiryDates: store.draftExpiryDates,
     isSubmitting: store.isSubmitting,
     submissionError: store.submissionError,
     submittedAt: store.submittedAt,

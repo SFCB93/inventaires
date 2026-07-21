@@ -24,7 +24,7 @@ interface ValidatorOrchestratorProps {
 
 export function ValidatorOrchestrator({ inventory, compartments, lastExpiryDates }: ValidatorOrchestratorProps) {
   const {
-    step, results, isSubmitting, submissionError, submittedAt, controlId,
+    step, results, draftExpiryDates, isSubmitting, submissionError, submittedAt, controlId,
     nonEmptyCompartments, totalCompartments, totalItems,
     currentCompartment, currentItem,
     canGoBack, setStep, compartmentIndex, recordResult, goBack,
@@ -102,7 +102,11 @@ export function ValidatorOrchestrator({ inventory, compartments, lastExpiryDates
           <ItemCard
             key={currentItem.id}
             item={currentItem}
-            initialExpiryDate={currentItem.hasExpiry && !currentItem.isCritical ? lastExpiryDates[currentItem.id] : undefined}
+            initialExpiryDate={currentItem.hasExpiry
+              ? (currentItem.id in draftExpiryDates
+                ? draftExpiryDates[currentItem.id]
+                : (!currentItem.isCritical ? lastExpiryDates[currentItem.id] : undefined))
+              : undefined}
             onPresent={(expiryDate) => recordResult({ status: 'present', expiryDate })}
             onAnomaly={(comment, expiryDate) => recordResult({ status: 'anomaly', comment, expiryDate })}
             onDragChange={handleDragChange}

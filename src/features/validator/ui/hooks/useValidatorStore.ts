@@ -9,6 +9,7 @@ interface ValidatorStore {
   compartmentIndex: number
   itemIndex: number
   results: ItemResult[]
+  draftExpiryDates: Record<string, string>
   isSubmitting: boolean
   submissionError: string | undefined
   submittedAt: string
@@ -18,6 +19,7 @@ interface ValidatorStore {
   setCompartmentIndex: (i: number) => void
   setItemIndex: (i: number) => void
   setResults: (results: ItemResult[]) => void
+  setDraftExpiryDate: (itemId: string, date: string | undefined) => void
   setIsSubmitting: (v: boolean) => void
   setSubmissionError: (e: string | undefined) => void
   setSubmittedAt: (t: string) => void
@@ -30,6 +32,7 @@ const INITIAL = {
   compartmentIndex: 0,
   itemIndex: 0,
   results: [] as ItemResult[],
+  draftExpiryDates: {} as Record<string, string>,
   isSubmitting: false,
   submissionError: undefined as string | undefined,
   submittedAt: '',
@@ -43,6 +46,9 @@ export const useValidatorStore = create<ValidatorStore>((set) => ({
   setCompartmentIndex: (compartmentIndex) => set({ compartmentIndex }),
   setItemIndex: (itemIndex) => set({ itemIndex }),
   setResults: (results) => set({ results }),
+  setDraftExpiryDate: (itemId, date) => set((state) => ({
+    draftExpiryDates: { ...state.draftExpiryDates, [itemId]: date ?? '' },
+  })),
   setIsSubmitting: (isSubmitting) => set({ isSubmitting }),
   setSubmissionError: (submissionError) => set({ submissionError }),
   setSubmittedAt: (submittedAt) => set({ submittedAt }),
