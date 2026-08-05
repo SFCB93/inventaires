@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddVehicleDeviceForm } from './AddVehicleDeviceForm'
 
@@ -43,6 +43,25 @@ describe('AddVehicleDeviceForm', () => {
     await userEvent.click(screen.getByTestId('btn-submit-add-vehicle-device'))
 
     expect(onSubmit).toHaveBeenCalledWith('inv-2')
+  })
+
+  it('sélectionne automatiquement le premier candidat une fois la liste chargée après l’ouverture', async () => {
+    const onSubmit = vi.fn()
+    const { rerender } = render(<AddVehicleDeviceForm {...defaultProps} candidates={[]} onSubmit={onSubmit} />)
+
+    rerender(
+      <AddVehicleDeviceForm
+        {...defaultProps}
+        candidates={[{ inventoryId: 'inv-1', name: 'Fourgon' }]}
+        onSubmit={onSubmit}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('select-vehicle-inventory')).toHaveValue('inv-1'))
+
+    await userEvent.click(screen.getByTestId('btn-submit-add-vehicle-device'))
+
+    expect(onSubmit).toHaveBeenCalledWith('inv-1')
   })
 
   it('affiche l’erreur de soumission sous le select', () => {

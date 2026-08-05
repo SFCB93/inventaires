@@ -24,7 +24,10 @@ export function AddVehicleDeviceForm({
   onSubmit,
   onClose,
 }: AddVehicleDeviceFormProps) {
-  const [selectedId, setSelectedId] = useState(candidates[0]?.inventoryId ?? '')
+  const [selectedId, setSelectedId] = useState('')
+  const effectiveSelectedId = candidates.some((candidate) => candidate.inventoryId === selectedId)
+    ? selectedId
+    : (candidates[0]?.inventoryId ?? '')
 
   if (!isOpen) return null
 
@@ -100,7 +103,7 @@ export function AddVehicleDeviceForm({
               <select
                 id="select-vehicle-inventory"
                 data-testid="select-vehicle-inventory"
-                value={selectedId}
+                value={effectiveSelectedId}
                 onChange={(e) => setSelectedId(e.target.value)}
                 className="w-full h-11 rounded-lg border-2 border-slate-200 px-3 text-sm focus:outline-none focus:border-blue-500 transition-colors"
               >
@@ -129,7 +132,7 @@ export function AddVehicleDeviceForm({
               <button
                 type="button"
                 data-testid="btn-submit-add-vehicle-device"
-                onClick={() => onSubmit(selectedId)}
+                onClick={() => onSubmit(effectiveSelectedId)}
                 disabled={isSubmitting}
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
