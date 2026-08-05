@@ -28,17 +28,7 @@ export function VehicleDeviceLinkForm({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6">
-      <div className="flex items-center justify-between mb-1">
-        <h2 className="font-semibold text-slate-900">Device IoT</h2>
-        <button
-          type="button"
-          data-testid="btn-show-vehicle-api-doc"
-          onClick={() => setIsApiDocOpen(true)}
-          className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
-        >
-          Voir la requête HTTP
-        </button>
-      </div>
+      <h2 className="font-semibold text-slate-900 mb-1">Device IoT</h2>
       <p className="text-sm text-slate-400 mb-4">
         {isLinked ? `Un device est associé à ${inventoryName}.` : `Aucun device associé à ${inventoryName}.`}
       </p>
@@ -76,6 +66,16 @@ export function VehicleDeviceLinkForm({
             {isSubmitting ? 'Génération…' : 'Associer un device'}
           </button>
         )}
+
+        <button
+          type="button"
+          data-testid="btn-show-vehicle-api-doc"
+          onClick={() => setIsApiDocOpen(true)}
+          className="px-4 py-2 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50
+                     transition-colors"
+        >
+          Voir la requête HTTP
+        </button>
       </div>
 
       <VehicleRevokeDialog
