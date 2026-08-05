@@ -22,6 +22,7 @@ export function VehicleDetailPage({ inventoryId, inventoryName, isLinked }: Vehi
     timeRange,
     setTimeRange,
     positions,
+    historyError,
     isLoadingHistory,
   } = useVehicleDetailPage(inventoryId, isLinked)
 
@@ -48,6 +49,11 @@ export function VehicleDetailPage({ inventoryId, inventoryName, isLinked }: Vehi
           <h2 className="font-semibold text-slate-900">Historique des positions</h2>
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
         </div>
+        {historyError && (
+          <p role="alert" className="text-sm text-red-600 mb-3">
+            {historyError}
+          </p>
+        )}
         <VehiclePositionHistoryMap positions={positions} isLoading={isLoadingHistory} />
       </div>
     </div>

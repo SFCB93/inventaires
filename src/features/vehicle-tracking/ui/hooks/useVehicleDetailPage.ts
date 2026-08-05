@@ -12,13 +12,19 @@ export function useVehicleDetailPage(inventoryId: string, initialIsLinked: boole
 
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
   const [positions, setPositions] = useState<PositionPoint[]>([])
+  const [historyError, setHistoryError] = useState<string | null>(null)
   const [isLoadingHistory, startHistoryTransition] = useTransition()
 
   const loadHistory = useCallback(
     (range: TimeRange) => {
       startHistoryTransition(async () => {
         const result = await getVehiclePositionHistoryAction(inventoryId, range)
-        if (result.ok) setPositions(result.value)
+        if (result.ok) {
+          setPositions(result.value)
+          setHistoryError(null)
+        } else {
+          setHistoryError(result.error)
+        }
       })
     },
     [inventoryId],
@@ -64,6 +70,7 @@ export function useVehicleDetailPage(inventoryId: string, initialIsLinked: boole
     timeRange,
     setTimeRange,
     positions,
+    historyError,
     isLoadingHistory,
   }
 }

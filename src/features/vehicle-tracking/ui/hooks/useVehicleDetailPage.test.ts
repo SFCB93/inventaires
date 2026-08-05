@@ -32,6 +32,25 @@ describe('useVehicleDetailPage — historique de positions', () => {
 
     await waitFor(() => expect(getVehiclePositionHistoryAction).toHaveBeenCalledWith(INV_ID, '7d'))
   })
+
+  it('affiche une erreur distincte d’un historique vide si le chargement échoue', async () => {
+    vi.mocked(getVehiclePositionHistoryAction).mockResolvedValue(err('Firestore indisponible.'))
+    const { result } = renderHook(() => useVehicleDetailPage(INV_ID, false))
+
+    await waitFor(() => expect(result.current.historyError).toBe('Firestore indisponible.'))
+    expect(result.current.positions).toEqual([])
+  })
+
+  it('efface l’erreur précédente une fois l’historique rechargé avec succès', async () => {
+    vi.mocked(getVehiclePositionHistoryAction).mockResolvedValueOnce(err('Firestore indisponible.'))
+    const { result } = renderHook(() => useVehicleDetailPage(INV_ID, false))
+    await waitFor(() => expect(result.current.historyError).toBe('Firestore indisponible.'))
+
+    vi.mocked(getVehiclePositionHistoryAction).mockResolvedValueOnce(ok([]))
+    act(() => result.current.setTimeRange('7d'))
+
+    await waitFor(() => expect(result.current.historyError).toBeNull())
+  })
 })
 
 describe('useVehicleDetailPage — lien du device', () => {
