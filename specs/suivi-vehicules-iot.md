@@ -39,7 +39,8 @@ Acteur technique additionnel : la carte IoT elle-même, qui pousse ses données 
 - Conséquence de cette règle : l'horodatage du point retenu correspond au moment où le véhicule a atteint sa position/état actuels, pas à la dernière réception d'un ping — le dashboard peut afficher "à la position Y depuis 1h" sans que ce délai ne se réinitialise à chaque ping identique reçu pendant l'immobilisation.
 - Indépendamment de la déduplication, un horodatage `lastSeenAt` est mis à jour à chaque ping reçu, y compris ceux ignorés pour la position/historique (simple overwrite sur l'état courant, sans impact sur le volume de données). Il permet de savoir si le device émet toujours, même quand il n'a rien de nouveau à rapporter.
 - Un ping dont l'horodatage est antérieur au dernier point retenu est ignoré — protège contre les livraisons hors-ordre ou les retries réseau qui corrompraient l'horodatage "depuis quand" affiché.
-- Réassocier un device à un inventaire invalide immédiatement toute clé précédemment active pour cet inventaire : une seule clé valide à la fois par véhicule, ce qui permet une rotation de clé sans use case dédié.
+- Réassocier un device à un inventaire invalide immédiatement toute clé précédemment active pour cet inventaire : une seule clé valide à la fois par véhicule. Cette possibilité de ré-association directe existe côté use case, mais n'est volontairement pas exposée dans l'UI pour un véhicule déjà lié — voir la règle sur la rotation ci-dessous.
+- Pas de raccourci "régénérer" dans l'UI pour un véhicule déjà lié : une rotation de clé nécessite explicitement de révoquer puis de ré-associer via "Ajouter", pour éviter qu'un clic accidentel invalide une carte déjà flashée sans confirmation.
 - L'endpoint applique une limite de débit par clé API, pour se prémunir d'un device défaillant ou d'une clé compromise envoyant un flux de requêtes anormal. Le seuil exact est un détail à trancher en phase dev.
 - La réponse de l'endpoint ne renvoie aucune information interne (UID, détails sur d'autres véhicules) — conforme aux règles de sécurité déjà appliquées aux autres endpoints du projet.
 - Les points d'historique de position sont conservés 90 jours, puis supprimés automatiquement.
@@ -56,7 +57,7 @@ Acteur technique additionnel : la carte IoT elle-même, qui pousse ses données 
 ## Composants UI à créer
 - `VehicleFleetStatus` — vue d'ensemble backoffice listant uniquement les véhicules ayant déjà un device associé : nom du véhicule, état coupe-circuit, position courante, durée depuis laquelle cet état/position est stable, date du dernier ping (`lastSeenAt`). Bouton "Ajouter" (en-tête et état vide) pour ouvrir `AddVehicleDeviceForm`.
 - `AddVehicleDeviceForm` — modale de sélection d'un inventaire parmi ceux sans device associé, puis génération de sa clé API (affichée une fois).
-- `VehicleDeviceLinkForm` — encart "Device IoT" de la page détail d'un véhicule ; régénération (rotation en un geste) et révocation de la clé API (via `VehicleRevokeDialog`), plus un accès à `VehicleApiDocModal`.
+- `VehicleDeviceLinkForm` — encart "Device IoT" de la page détail d'un véhicule ; associer un device si aucun n'est lié, ou révoquer (via `VehicleRevokeDialog`) si un device est déjà lié — pas de régénération directe, plus un accès à `VehicleApiDocModal`.
 - `VehicleRevokeDialog` — confirmation de révocation à deux choix : "Révoquer" (garde l'historique) ou "Révoquer et supprimer toutes les données" (efface tout).
 - `VehicleApiDocModal` — popup documentant le format de la requête HTTP attendue par l'endpoint (méthode, en-têtes, corps JSON, codes de réponse), pour faciliter le paramétrage du firmware.
 - `VehiclePositionHistoryMap` — carte affichant l'historique de positions d'un véhicule.

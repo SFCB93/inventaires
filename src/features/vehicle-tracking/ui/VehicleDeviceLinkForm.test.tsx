@@ -19,9 +19,9 @@ describe('VehicleDeviceLinkForm', () => {
     expect(screen.queryByTestId('btn-revoke-device-key')).not.toBeInTheDocument()
   })
 
-  it('propose de régénérer et révoquer quand un device est lié', () => {
+  it('ne propose que Révoquer quand un device est lié, pas de raccourci de régénération', () => {
     render(<VehicleDeviceLinkForm {...defaultProps} isLinked />)
-    expect(screen.getByTestId('btn-generate-device-key')).toHaveTextContent('Régénérer la clé')
+    expect(screen.queryByTestId('btn-generate-device-key')).not.toBeInTheDocument()
     expect(screen.getByTestId('btn-revoke-device-key')).toBeInTheDocument()
   })
 

@@ -53,18 +53,7 @@ export function VehicleDeviceLinkForm({
       )}
 
       <div className="flex gap-3">
-        <button
-          type="button"
-          data-testid="btn-generate-device-key"
-          onClick={onGenerate}
-          disabled={isSubmitting}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold
-                     hover:bg-blue-700 transition-colors disabled:opacity-50"
-        >
-          {isSubmitting ? 'Génération…' : isLinked ? 'Régénérer la clé' : 'Associer un device'}
-        </button>
-
-        {isLinked && (
+        {isLinked ? (
           <button
             type="button"
             data-testid="btn-revoke-device-key"
@@ -74,6 +63,17 @@ export function VehicleDeviceLinkForm({
                        transition-colors disabled:opacity-50"
           >
             Révoquer
+          </button>
+        ) : (
+          <button
+            type="button"
+            data-testid="btn-generate-device-key"
+            onClick={onGenerate}
+            disabled={isSubmitting}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold
+                       hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {isSubmitting ? 'Génération…' : 'Associer un device'}
           </button>
         )}
       </div>
