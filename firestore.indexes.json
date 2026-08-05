@@ -15,6 +15,23 @@
         { "fieldPath": "inventoryId", "order": "ASCENDING" },
         { "fieldPath": "submittedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "vehiclePositions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "inventoryId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "vehicleStatuses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isCircuitCut", "order": "ASCENDING" },
+        { "fieldPath": "poweredAlertSent", "order": "ASCENDING" },
+        { "fieldPath": "stableSince", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

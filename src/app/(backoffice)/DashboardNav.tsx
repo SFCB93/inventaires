@@ -11,6 +11,7 @@ interface DashboardNavProps {
 const NAV_LINKS = [
   { href: '/dashboard/inventaires', label: 'Inventaires' },
   { href: '/dashboard/controles', label: 'Contrôles' },
+  { href: '/dashboard/vehicules', label: 'Véhicules' },
   { href: '/dashboard/parametres', label: 'Paramètres' },
 ]
 

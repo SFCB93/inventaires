@@ -9,3 +9,13 @@ export function formatDateTime(date: Date): string {
     hour: '2-digit', minute: '2-digit',
   })
 }
+
+export function formatRelativeDuration(date: Date, now: Date = new Date()): string {
+  const diffMin = Math.floor((now.getTime() - date.getTime()) / 60000)
+  if (diffMin < 1) return "à l'instant"
+  if (diffMin < 60) return `${diffMin} min`
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24) return `${diffHours} h`
+  const diffDays = Math.floor(diffHours / 24)
+  return `${diffDays} j`
+}
