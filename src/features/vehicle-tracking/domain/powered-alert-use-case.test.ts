@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ok, err } from '@/shared/domain/result'
-import { runVehiclePoweredAlertsCronUseCase } from './powered-alert-use-case'
+import { runVehiclePoweredAlertsCronUseCase, sendPoweredAlertIfDue } from './powered-alert-use-case'
 import { vehicleTrackingRepository } from '../data/repository'
 import { sendVehiclePoweredAlertEmail } from './email-service'
+import { POWERED_ALERT_THRESHOLD_HOURS, MS_PER_HOUR } from './constants'
 
 vi.mock('../data/repository', () => ({
   vehicleTrackingRepository: {
@@ -108,5 +109,70 @@ describe('runVehiclePoweredAlertsCronUseCase', () => {
     expect(result.ok).toBe(true)
     expect(result.ok && result.value.sent).toBe(1)
     expect(result.ok && result.value.errors).toHaveLength(1)
+  })
+})
+
+describe('sendPoweredAlertIfDue', () => {
+  const now = new Date('2026-01-01T12:00:00Z')
+  const baseParams = {
+    inventoryId: 'inv-1',
+    associationId: 'assoc-1',
+    isCircuitCut: false,
+    alreadySent: false,
+    now,
+  }
+
+  it('ne fait rien si le coupe-circuit est activé', async () => {
+    await sendPoweredAlertIfDue({ ...baseParams, isCircuitCut: true, stableSince: new Date(0) })
+
+    expect(vehicleTrackingRepository.listInventoryNames).not.toHaveBeenCalled()
+    expect(sendVehiclePoweredAlertEmail).not.toHaveBeenCalled()
+  })
+
+  it('ne fait rien si l’alerte a déjà été envoyée pour cet épisode', async () => {
+    await sendPoweredAlertIfDue({ ...baseParams, alreadySent: true, stableSince: new Date(0) })
+
+    expect(vehicleTrackingRepository.listInventoryNames).not.toHaveBeenCalled()
+    expect(sendVehiclePoweredAlertEmail).not.toHaveBeenCalled()
+  })
+
+  it('ne fait rien si le seuil n’est pas encore atteint', async () => {
+    const stableSince = new Date(now.getTime() - (POWERED_ALERT_THRESHOLD_HOURS - 1) * MS_PER_HOUR)
+
+    await sendPoweredAlertIfDue({ ...baseParams, stableSince })
+
+    expect(vehicleTrackingRepository.listInventoryNames).not.toHaveBeenCalled()
+    expect(sendVehiclePoweredAlertEmail).not.toHaveBeenCalled()
+  })
+
+  it('envoie l’alerte et la marque comme envoyée une fois le seuil dépassé', async () => {
+    const stableSince = new Date(now.getTime() - (POWERED_ALERT_THRESHOLD_HOURS + 1) * MS_PER_HOUR)
+    vi.mocked(vehicleTrackingRepository.listInventoryNames).mockResolvedValue(ok(new Map([['inv-1', 'Fourgon']])))
+    vi.mocked(vehicleTrackingRepository.listAssociationNotificationConfigs).mockResolvedValue(
+      ok(new Map([['assoc-1', { name: 'Asso', notificationEmails: ['resp@asso.fr'] }]])),
+    )
+    vi.mocked(vehicleTrackingRepository.markPoweredAlertSent).mockResolvedValue(ok(undefined))
+
+    await sendPoweredAlertIfDue({ ...baseParams, stableSince })
+
+    expect(sendVehiclePoweredAlertEmail).toHaveBeenCalledWith({
+      recipients: ['resp@asso.fr'],
+      associationName: 'Asso',
+      vehicles: [{ name: 'Fourgon', since: stableSince }],
+    })
+    expect(vehicleTrackingRepository.markPoweredAlertSent).toHaveBeenCalledWith('inv-1')
+  })
+
+  it('n’envoie ni ne marque rien si l’association n’a pas d’adresse de notification', async () => {
+    const stableSince = new Date(now.getTime() - (POWERED_ALERT_THRESHOLD_HOURS + 1) * MS_PER_HOUR)
+    vi.mocked(vehicleTrackingRepository.listInventoryNames).mockResolvedValue(ok(new Map([['inv-1', 'Fourgon']])))
+    vi.mocked(vehicleTrackingRepository.listAssociationNotificationConfigs).mockResolvedValue(
+      ok(new Map([['assoc-1', { name: 'Asso', notificationEmails: [] }]])),
+    )
+
+    await sendPoweredAlertIfDue({ ...baseParams, stableSince })
+
+    expect(sendVehiclePoweredAlertEmail).not.toHaveBeenCalled()
+    expect(vehicleTrackingRepository.markPoweredAlertSent).not.toHaveBeenCalled()
   })
 })

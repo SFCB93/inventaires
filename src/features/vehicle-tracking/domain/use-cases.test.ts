@@ -13,6 +13,7 @@ import { vehicleTrackingRepository } from '../data/repository'
 import { inventoryRepository } from '@/features/inventories/data/repository'
 import { generateApiKey, hashApiKey } from './api-key'
 import { haversineDistanceMeters } from './geo'
+import { sendPoweredAlertIfDue } from './powered-alert-use-case'
 import { DEDUP_DISTANCE_METERS, MIN_PING_INTERVAL_SECONDS, MS_PER_SECOND, MS_PER_HOUR, TIME_RANGE_HOURS, ERROR_UNAUTHORIZED, ERROR_RATE_LIMITED } from './constants'
 
 vi.mock('../data/repository', () => ({
@@ -45,6 +46,10 @@ vi.mock('./api-key', () => ({
 
 vi.mock('./geo', () => ({
   haversineDistanceMeters: vi.fn(),
+}))
+
+vi.mock('./powered-alert-use-case', () => ({
+  sendPoweredAlertIfDue: vi.fn().mockResolvedValue(undefined),
 }))
 
 const ASSOC_ID = 'assoc-1'
@@ -206,7 +211,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
     vi.mocked(vehicleTrackingRepository.getVehicleStatus).mockResolvedValue(ok({
       associationId: ASSOC_ID, lat: 48.85, lng: 2.35, isCircuitCut: false,
-      stableSince: new Date('2026-01-01T10:00:00Z'), lastSeenAt: baseInput.timestamp,
+      stableSince: new Date('2026-01-01T10:00:00Z'), lastSeenAt: baseInput.timestamp, poweredAlertSent: false,
     }))
 
     const result = await receiveVehicleStatusUseCase(baseInput)
@@ -222,7 +227,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
     vi.mocked(vehicleTrackingRepository.getVehicleStatus).mockResolvedValue(ok({
       associationId: ASSOC_ID, lat: 48.85, lng: 2.35, isCircuitCut: false,
-      stableSince: lastSeenAt, lastSeenAt,
+      stableSince: lastSeenAt, lastSeenAt, poweredAlertSent: false,
     }))
 
     const result = await receiveVehicleStatusUseCase(baseInput)
@@ -232,12 +237,13 @@ describe('receiveVehicleStatusUseCase', () => {
   })
 
   it('ignore un ping identique (position proche et même état) et rafraîchit seulement lastSeenAt', async () => {
+    const stableSince = new Date('2026-01-01T09:00:00Z')
     const lastSeenAt = new Date(baseInput.timestamp.getTime() - (MIN_PING_INTERVAL_SECONDS + 1) * MS_PER_SECOND)
     vi.mocked(vehicleTrackingRepository.findDeviceByKeyHash).mockResolvedValue(ok({ inventoryId: INV_ID, associationId: ASSOC_ID }))
     vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
     vi.mocked(vehicleTrackingRepository.getVehicleStatus).mockResolvedValue(ok({
       associationId: ASSOC_ID, lat: 48.85, lng: 2.35, isCircuitCut: false,
-      stableSince: lastSeenAt, lastSeenAt,
+      stableSince, lastSeenAt, poweredAlertSent: false,
     }))
     vi.mocked(haversineDistanceMeters).mockReturnValue(DEDUP_DISTANCE_METERS - 1)
     vi.mocked(vehicleTrackingRepository.touchLastSeen).mockResolvedValue(ok(undefined))
@@ -247,6 +253,31 @@ describe('receiveVehicleStatusUseCase', () => {
     expect(result).toEqual(ok(undefined))
     expect(vehicleTrackingRepository.touchLastSeen).toHaveBeenCalledWith(INV_ID, baseInput.timestamp)
     expect(vehicleTrackingRepository.recordVehiclePoint).not.toHaveBeenCalled()
+    expect(sendPoweredAlertIfDue).toHaveBeenCalledWith({
+      inventoryId: INV_ID,
+      associationId: ASSOC_ID,
+      stableSince,
+      isCircuitCut: baseInput.isCircuitCut,
+      alreadySent: false,
+      now: baseInput.timestamp,
+    })
+  })
+
+  it('ne redéclenche pas la vérification d’alerte alimentation si elle a déjà été envoyée', async () => {
+    const stableSince = new Date('2026-01-01T09:00:00Z')
+    const lastSeenAt = new Date(baseInput.timestamp.getTime() - (MIN_PING_INTERVAL_SECONDS + 1) * MS_PER_SECOND)
+    vi.mocked(vehicleTrackingRepository.findDeviceByKeyHash).mockResolvedValue(ok({ inventoryId: INV_ID, associationId: ASSOC_ID }))
+    vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
+    vi.mocked(vehicleTrackingRepository.getVehicleStatus).mockResolvedValue(ok({
+      associationId: ASSOC_ID, lat: 48.85, lng: 2.35, isCircuitCut: false,
+      stableSince, lastSeenAt, poweredAlertSent: true,
+    }))
+    vi.mocked(haversineDistanceMeters).mockReturnValue(DEDUP_DISTANCE_METERS - 1)
+    vi.mocked(vehicleTrackingRepository.touchLastSeen).mockResolvedValue(ok(undefined))
+
+    await receiveVehicleStatusUseCase(baseInput)
+
+    expect(sendPoweredAlertIfDue).toHaveBeenCalledWith(expect.objectContaining({ alreadySent: true }))
   })
 
   it('enregistre un nouveau point si la position a significativement changé', async () => {
@@ -255,7 +286,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
     vi.mocked(vehicleTrackingRepository.getVehicleStatus).mockResolvedValue(ok({
       associationId: ASSOC_ID, lat: 48.85, lng: 2.35, isCircuitCut: false,
-      stableSince: lastSeenAt, lastSeenAt,
+      stableSince: lastSeenAt, lastSeenAt, poweredAlertSent: false,
     }))
     vi.mocked(haversineDistanceMeters).mockReturnValue(DEDUP_DISTANCE_METERS + 1)
     vi.mocked(vehicleTrackingRepository.recordVehiclePoint).mockResolvedValue(ok(undefined))
@@ -265,6 +296,7 @@ describe('receiveVehicleStatusUseCase', () => {
     expect(result).toEqual(ok(undefined))
     expect(vehicleTrackingRepository.recordVehiclePoint).toHaveBeenCalled()
     expect(vehicleTrackingRepository.touchLastSeen).not.toHaveBeenCalled()
+    expect(sendPoweredAlertIfDue).not.toHaveBeenCalled()
   })
 
   it('enregistre un nouveau point si seul l’état du coupe-circuit a changé', async () => {
@@ -273,7 +305,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
     vi.mocked(vehicleTrackingRepository.getVehicleStatus).mockResolvedValue(ok({
       associationId: ASSOC_ID, lat: baseInput.lat, lng: baseInput.lng, isCircuitCut: true,
-      stableSince: lastSeenAt, lastSeenAt,
+      stableSince: lastSeenAt, lastSeenAt, poweredAlertSent: false,
     }))
     vi.mocked(haversineDistanceMeters).mockReturnValue(0)
     vi.mocked(vehicleTrackingRepository.recordVehiclePoint).mockResolvedValue(ok(undefined))
@@ -282,6 +314,7 @@ describe('receiveVehicleStatusUseCase', () => {
 
     expect(result).toEqual(ok(undefined))
     expect(vehicleTrackingRepository.recordVehiclePoint).toHaveBeenCalled()
+    expect(sendPoweredAlertIfDue).not.toHaveBeenCalled()
   })
 })
 

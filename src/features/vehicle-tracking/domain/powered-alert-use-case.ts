@@ -64,3 +64,34 @@ export async function runVehiclePoweredAlertsCronUseCase(): Promise<Result<Power
     return err(`Erreur fatale CRON alertes véhicules: ${(error as Error).message}`)
   }
 }
+
+// Vérification immédiate déclenchée à chaque ping "sans changement" (cf. receiveVehicleStatusUseCase) :
+// complète le cron quotidien par une détection quasi temps réel tant que le device continue d'émettre.
+// Le flag poweredAlertSent est la garde commune aux deux déclencheurs, aucun double envoi possible.
+export async function sendPoweredAlertIfDue(params: {
+  inventoryId: string
+  associationId: string
+  stableSince: Date
+  isCircuitCut: boolean
+  alreadySent: boolean
+  now: Date
+}): Promise<void> {
+  if (params.isCircuitCut || params.alreadySent) return
+
+  const hoursPowered = (params.now.getTime() - params.stableSince.getTime()) / MS_PER_HOUR
+  if (hoursPowered < POWERED_ALERT_THRESHOLD_HOURS) return
+
+  const namesResult = await vehicleTrackingRepository.listInventoryNames([params.inventoryId])
+  const configsResult = await vehicleTrackingRepository.listAssociationNotificationConfigs([params.associationId])
+  if (!namesResult.ok || !configsResult.ok) return
+
+  const config = configsResult.value.get(params.associationId)
+  if (!config || config.notificationEmails.length === 0) return
+
+  await sendVehiclePoweredAlertEmail({
+    recipients: config.notificationEmails,
+    associationName: config.name,
+    vehicles: [{ name: namesResult.value.get(params.inventoryId) ?? 'Véhicule', since: params.stableSince }],
+  })
+  await vehicleTrackingRepository.markPoweredAlertSent(params.inventoryId)
+}

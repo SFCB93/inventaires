@@ -5,6 +5,7 @@ import { inventoryRepository } from '@/features/inventories/data/repository'
 import { vehicleTrackingRepository } from '../data/repository'
 import { generateApiKey, hashApiKey } from './api-key'
 import { haversineDistanceMeters } from './geo'
+import { sendPoweredAlertIfDue } from './powered-alert-use-case'
 import { DEDUP_DISTANCE_METERS, MIN_PING_INTERVAL_SECONDS, MS_PER_SECOND, MS_PER_HOUR, TIME_RANGE_HOURS, ERROR_UNAUTHORIZED, ERROR_RATE_LIMITED } from './constants'
 import type { VehicleStatus, UnlinkedInventory, PositionPoint, TimeRange } from './types'
 
@@ -81,7 +82,21 @@ export async function receiveVehicleStatusUseCase(input: ReceiveVehicleStatusInp
 
     const distance = haversineDistanceMeters(current.value, input)
     const isUnchanged = distance < DEDUP_DISTANCE_METERS && current.value.isCircuitCut === input.isCircuitCut
-    if (isUnchanged) return vehicleTrackingRepository.touchLastSeen(inventoryId, input.timestamp)
+    if (isUnchanged) {
+      const touchResult = await vehicleTrackingRepository.touchLastSeen(inventoryId, input.timestamp)
+      if (!touchResult.ok) return touchResult
+
+      sendPoweredAlertIfDue({
+        inventoryId,
+        associationId,
+        stableSince: current.value.stableSince,
+        isCircuitCut: input.isCircuitCut,
+        alreadySent: current.value.poweredAlertSent,
+        now: input.timestamp,
+      }).catch((error) => console.error('[receiveVehicleStatusUseCase] alerte alimentation échouée', error))
+
+      return ok(undefined)
+    }
   }
 
   return vehicleTrackingRepository.recordVehiclePoint({

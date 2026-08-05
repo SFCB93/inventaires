@@ -13,6 +13,7 @@ export interface VehicleStatusRecord {
   isCircuitCut: boolean
   stableSince: Date
   lastSeenAt: Date
+  poweredAlertSent: boolean
 }
 
 export interface VehiclePositionRecord {
@@ -30,6 +31,7 @@ function toStatusRecord(data: FirebaseFirestore.DocumentData): VehicleStatusReco
     isCircuitCut: data.isCircuitCut as boolean,
     stableSince: (data.stableSince as Timestamp).toDate(),
     lastSeenAt: (data.lastSeenAt as Timestamp).toDate(),
+    poweredAlertSent: (data.poweredAlertSent as boolean) ?? false,
   }
 }
 

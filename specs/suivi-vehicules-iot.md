@@ -15,7 +15,7 @@ Acteur technique additionnel : la carte IoT elle-même, qui pousse ses données 
 3. Le backend met à jour l'état courant du véhicule, et enregistre un nouveau point d'historique si les règles de déduplication le justifient (cf. règles métier).
 4. Dans le dashboard, un responsable consulte la liste des véhicules déjà équipés d'un device : nom, état coupe-circuit, position courante, durée de stabilité de cet état, date du dernier ping reçu. Les inventaires sans device associé n'apparaissent pas dans cette liste.
 5. En cliquant sur un véhicule, il visualise l'historique de ses positions sur une carte, avec un sélecteur d'échelle de temps.
-6. Si un véhicule reste alimenté en continu (coupe-circuit non activé) plus de 2h sans changer de position, un mail d'alerte est envoyé aux adresses de notification de l'association.
+6. Si un véhicule reste alimenté en continu (coupe-circuit non activé) plus de 4h sans changer de position, un mail d'alerte est envoyé aux adresses de notification de l'association — détecté soit dès le prochain ping reçu, soit au plus tard par le cron quotidien si le device ne réémet pas.
 
 ## Parcours alternatifs et edge cases
 - Clé API invalide ou révoquée → l'endpoint rejette la requête (401), aucune écriture.
@@ -45,9 +45,12 @@ Acteur technique additionnel : la carte IoT elle-même, qui pousse ses données 
 - Les points d'historique de position sont conservés 90 jours, puis supprimés automatiquement.
 - Vérification d'appartenance : toute lecture backoffice de l'état ou de l'historique d'un véhicule vérifie que l'inventaire appartient à l'association de l'utilisateur connecté.
 - Aucun champ `type` n'est ajouté à `Inventory` pour cette feature : un device peut être associé à n'importe quel inventaire existant, sans distinction formelle "véhicule".
-- Un véhicule alimenté (coupe-circuit non activé) dont la position/état n'a pas changé depuis plus de 2h (seuil fixe) déclenche une alerte mail, vérifiée par un cron périodique — indépendant de la fréquence d'émission du device.
-- Une seule alerte est envoyée par épisode d'immobilisation alimentée : dès qu'un nouveau point est retenu pour ce véhicule (déplacement ou changement d'état), l'alerte peut de nouveau se déclencher si le seuil est de nouveau dépassé.
-- Le mail regroupe tous les véhicules d'une même association en un seul envoi (pas un mail par véhicule), envoyé aux adresses de notification déjà configurées pour l'association.
+- Un véhicule alimenté (coupe-circuit non activé) dont la position/état n'a pas changé depuis plus de 4h (seuil fixe) déclenche une alerte mail.
+- Deux déclencheurs indépendants vérifient ce seuil, avec le même garde-fou (`poweredAlertSent`) pour ne jamais doubler l'envoi :
+  - à chaque ping reçu sans changement (position/état identiques) — détection quasi immédiate tant que le device continue d'émettre ;
+  - un cron quotidien — filet de sécurité si le device cesse d'émettre après avoir atteint le seuil (limite du plan Vercel Hobby : un cron ne peut s'exécuter qu'une fois par jour, la détection par cron seul serait donc décalée de plusieurs heures).
+- Une seule alerte est envoyée par épisode d'immobilisation alimentée : dès qu'un nouveau point est retenu pour ce véhicule (déplacement ou changement d'état), `poweredAlertSent` est réinitialisé et l'alerte peut de nouveau se déclencher si le seuil est de nouveau dépassé.
+- Le mail du cron regroupe tous les véhicules d'une même association en un seul envoi ; le déclenchement par ping envoie un mail par véhicule au moment où il est détecté (pas de groupement possible, la détection est individuelle).
 
 ## Composants UI à créer
 - `VehicleFleetStatus` — vue d'ensemble backoffice listant uniquement les véhicules ayant déjà un device associé : nom du véhicule, état coupe-circuit, position courante, durée depuis laquelle cet état/position est stable, date du dernier ping (`lastSeenAt`). Bouton "Ajouter" (en-tête et état vide) pour ouvrir `AddVehicleDeviceForm`.
@@ -72,7 +75,7 @@ Acteur technique additionnel : la carte IoT elle-même, qui pousse ses données 
 - Historique de positions : une entrée par point retenu (position, état coupe-circuit, horodatage), avec une expiration à 90 jours entraînant une suppression automatique.
 
 ## Notifications mail
-- "Véhicule laissé alimenté" : un cron périodique (toutes les heures) détecte les véhicules alimentés (coupe-circuit non activé) depuis plus de 2h sans changement de position/état, et envoie un mail groupé par association aux adresses de notification déjà configurées (mêmes destinataires que les alertes de péremption). Un seul mail par épisode d'immobilisation, jusqu'à ce que le véhicule bouge ou coupe son circuit.
+- "Véhicule laissé alimenté" : détecté soit immédiatement à la réception d'un ping sans changement (mail individuel), soit par un cron quotidien de rattrapage (mail groupé par association) — aux adresses de notification déjà configurées (mêmes destinataires que les alertes de péremption). Un seul mail par épisode d'immobilisation, jusqu'à ce que le véhicule bouge ou coupe son circuit.
 - Les signalements avarie/maintenance avec envoi de mail relèvent du carnet de bord (feature séparée).
 
 ## Hors scope

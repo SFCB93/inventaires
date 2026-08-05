@@ -3,7 +3,7 @@ import type { TimeRange } from "./types";
 export const DEDUP_DISTANCE_METERS = 10;
 export const MIN_PING_INTERVAL_SECONDS = 55;
 export const POSITION_RETENTION_DAYS = 90;
-export const POWERED_ALERT_THRESHOLD_HOURS = 2;
+export const POWERED_ALERT_THRESHOLD_HOURS = 4;
 
 export const MS_PER_SECOND = 1000;
 const MS_PER_MINUTE = 60 * MS_PER_SECOND;
