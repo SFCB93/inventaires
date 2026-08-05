@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRememberedName } from '@/shared/ui/hooks/useRememberedName'
 
 export function useSummaryScreen(onSubmit: (verifierName: string) => void) {
-  const [verifierName, setVerifierNameRaw] = useState('')
+  const { rememberedName: verifierName, setRememberedName: setVerifierNameRaw } = useRememberedName()
   const [nameError, setNameError] = useState(false)
 
   function setVerifierName(value: string) {

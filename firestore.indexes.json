@@ -32,6 +32,14 @@
         { "fieldPath": "poweredAlertSent", "order": "ASCENDING" },
         { "fieldPath": "stableSince", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "logbookEntries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "inventoryId", "order": "ASCENDING" },
+        { "fieldPath": "submittedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

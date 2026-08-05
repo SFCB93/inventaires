@@ -1,5 +1,7 @@
 'use client'
 
+import type { LogbookHistoryEntry } from '@/features/logbook/domain/types'
+import { VehicleLogbookHistory } from '@/features/logbook/ui/VehicleLogbookHistory'
 import { useVehicleDetailPage } from './hooks/useVehicleDetailPage'
 import { VehicleDeviceLinkForm } from './VehicleDeviceLinkForm'
 import { TimeRangeSelector } from './TimeRangeSelector'
@@ -9,9 +11,10 @@ interface VehicleDetailPageProps {
   inventoryId: string
   inventoryName: string
   isLinked: boolean
+  logbookEntries: LogbookHistoryEntry[]
 }
 
-export function VehicleDetailPage({ inventoryId, inventoryName, isLinked }: VehicleDetailPageProps) {
+export function VehicleDetailPage({ inventoryId, inventoryName, isLinked, logbookEntries }: VehicleDetailPageProps) {
   const {
     isLinked: currentIsLinked,
     newApiKey,
@@ -58,6 +61,8 @@ export function VehicleDetailPage({ inventoryId, inventoryName, isLinked }: Vehi
         )}
         <VehiclePositionHistoryMap positions={positions} isLoading={isLoadingHistory} />
       </div>
+
+      <VehicleLogbookHistory entries={logbookEntries} />
     </div>
   )
 }

@@ -9,7 +9,7 @@ import { ControlsAccordion } from './ControlsAccordion'
 import { AnomalyAlertsBlock } from '@/features/controls/ui/AnomalyAlertsBlock'
 import { PublicCorrectionModal } from './PublicCorrectionModal'
 import { PublicAnomalyCorrectionModal } from './PublicAnomalyCorrectionModal'
-import { useCorrectorName } from './hooks/useCorrectorName'
+import { useRememberedName } from '@/shared/ui/hooks/useRememberedName'
 import { usePublicCorrectionModal } from './hooks/usePublicCorrectionModal'
 import { usePublicAnomalyCorrectionModal } from './hooks/usePublicAnomalyCorrectionModal'
 
@@ -29,7 +29,7 @@ export function RecentControlsPage({
   alertThresholdDays,
 }: RecentControlsPageProps) {
   const router = useRouter()
-  const { correctorName, setCorrectorName } = useCorrectorName()
+  const { rememberedName: correctorName, setRememberedName: setCorrectorName } = useRememberedName()
   const correction = usePublicCorrectionModal(() => router.refresh(), correctorName, alertThresholdDays)
   const anomalyCorrection = usePublicAnomalyCorrectionModal(() => router.refresh(), correctorName)
 
