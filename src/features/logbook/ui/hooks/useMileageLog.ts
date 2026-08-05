@@ -7,6 +7,7 @@ import type { MileageEntry } from '../../domain/types'
 export function useMileageLog(inventoryId: string, driverName: string, onSuccess: () => void) {
   const [history, setHistory] = useState<MileageEntry[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(true)
+  const [historyError, setHistoryError] = useState<string | undefined>(undefined)
   const [km, setKm] = useState('')
   const [mission, setMission] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -14,7 +15,11 @@ export function useMileageLog(inventoryId: string, driverName: string, onSuccess
 
   useEffect(() => {
     listMileageHistoryAction(inventoryId).then((result) => {
-      if (result.ok) setHistory(result.value)
+      if (result.ok) {
+        setHistory(result.value)
+      } else {
+        setHistoryError(result.error)
+      }
       setIsLoadingHistory(false)
     })
   }, [inventoryId])
@@ -33,5 +38,5 @@ export function useMileageLog(inventoryId: string, driverName: string, onSuccess
     onSuccess()
   }
 
-  return { history, isLoadingHistory, km, setKm, mission, setMission, isSubmitting, error, handleSubmit }
+  return { history, isLoadingHistory, historyError, km, setKm, mission, setMission, isSubmitting, error, handleSubmit }
 }

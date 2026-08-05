@@ -37,6 +37,7 @@ export function VehicleLogbookPage({ inventory, compartments, lastExpiryDates }:
       <MileageLogForm
         history={mileage.history}
         isLoadingHistory={mileage.isLoadingHistory}
+        historyError={mileage.historyError}
         km={mileage.km}
         onKmChange={mileage.setKm}
         mission={mileage.mission}

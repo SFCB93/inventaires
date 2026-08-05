@@ -12,9 +12,16 @@ interface VehicleDetailPageProps {
   inventoryName: string
   isLinked: boolean
   logbookEntries: LogbookHistoryEntry[]
+  logbookError?: string
 }
 
-export function VehicleDetailPage({ inventoryId, inventoryName, isLinked, logbookEntries }: VehicleDetailPageProps) {
+export function VehicleDetailPage({
+  inventoryId,
+  inventoryName,
+  isLinked,
+  logbookEntries,
+  logbookError,
+}: VehicleDetailPageProps) {
   const {
     isLinked: currentIsLinked,
     newApiKey,
@@ -62,6 +69,11 @@ export function VehicleDetailPage({ inventoryId, inventoryName, isLinked, logboo
         <VehiclePositionHistoryMap positions={positions} isLoading={isLoadingHistory} />
       </div>
 
+      {logbookError && (
+        <p role="alert" className="text-sm text-red-600">
+          {logbookError}
+        </p>
+      )}
       <VehicleLogbookHistory entries={logbookEntries} />
     </div>
   )

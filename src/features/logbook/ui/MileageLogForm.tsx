@@ -7,6 +7,7 @@ import { formatDateTime } from '@/shared/lib/format'
 interface MileageLogFormProps {
   history: MileageEntry[]
   isLoadingHistory?: boolean
+  historyError?: string
   km: string
   onKmChange: (value: string) => void
   mission: string
@@ -20,6 +21,7 @@ interface MileageLogFormProps {
 export function MileageLogForm({
   history,
   isLoadingHistory = false,
+  historyError,
   km,
   onKmChange,
   mission,
@@ -87,6 +89,8 @@ export function MileageLogForm({
             <div className="space-y-2" data-testid="mileage-history-skeleton">
               {[0, 1].map((i) => <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />)}
             </div>
+          ) : historyError ? (
+            <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{historyError}</p>
           ) : history.length === 0 ? (
             <p className="text-sm text-slate-400 px-1">Aucun relevé pour l&apos;instant.</p>
           ) : (

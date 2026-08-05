@@ -25,6 +25,7 @@ export default async function VehiculeDetailPage({
       inventoryName={vehicleResult.value.name}
       isLinked={vehicleResult.value.isLinked}
       logbookEntries={logbookResult.ok ? logbookResult.value : []}
+      logbookError={logbookResult.ok ? undefined : logbookResult.error}
     />
   )
 }
