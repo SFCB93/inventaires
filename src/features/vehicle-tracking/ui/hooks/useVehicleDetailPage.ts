@@ -1,7 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback, useTransition } from 'react'
-import { linkDeviceAction, revokeDeviceAction, getVehiclePositionHistoryAction } from '../../domain/actions'
+import {
+  linkDeviceAction,
+  revokeDeviceAction,
+  revokeDeviceAndDeleteDataAction,
+  getVehiclePositionHistoryAction,
+} from '../../domain/actions'
 import type { PositionPoint, TimeRange } from '../../domain/types'
 
 export function useVehicleDetailPage(inventoryId: string, initialIsLinked: boolean) {
@@ -60,6 +65,21 @@ export function useVehicleDetailPage(inventoryId: string, initialIsLinked: boole
     setNewApiKey(undefined)
   }
 
+  async function handleRevokeAndDelete() {
+    setIsSubmittingDevice(true)
+    setDeviceError(null)
+    const result = await revokeDeviceAndDeleteDataAction(inventoryId)
+    setIsSubmittingDevice(false)
+    if (!result.ok) {
+      setDeviceError(result.error)
+      return
+    }
+    setIsLinked(false)
+    setNewApiKey(undefined)
+    setPositions([])
+    setHistoryError(null)
+  }
+
   return {
     isLinked,
     newApiKey,
@@ -67,6 +87,7 @@ export function useVehicleDetailPage(inventoryId: string, initialIsLinked: boole
     deviceError,
     handleGenerate,
     handleRevoke,
+    handleRevokeAndDelete,
     timeRange,
     setTimeRange,
     positions,

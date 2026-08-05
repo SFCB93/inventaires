@@ -19,6 +19,7 @@ export function VehicleDetailPage({ inventoryId, inventoryName, isLinked }: Vehi
     deviceError,
     handleGenerate,
     handleRevoke,
+    handleRevokeAndDelete,
     timeRange,
     setTimeRange,
     positions,
@@ -37,6 +38,7 @@ export function VehicleDetailPage({ inventoryId, inventoryName, isLinked }: Vehi
         isSubmitting={isSubmittingDevice}
         onGenerate={handleGenerate}
         onRevoke={handleRevoke}
+        onRevokeAndDelete={handleRevokeAndDelete}
       />
       {deviceError && (
         <p role="alert" className="text-sm text-red-600">

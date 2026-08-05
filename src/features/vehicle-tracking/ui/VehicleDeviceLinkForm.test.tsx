@@ -9,6 +9,7 @@ const defaultProps = {
   isSubmitting: false,
   onGenerate: vi.fn(),
   onRevoke: vi.fn(),
+  onRevokeAndDelete: vi.fn(),
 }
 
 describe('VehicleDeviceLinkForm', () => {
@@ -33,24 +34,53 @@ describe('VehicleDeviceLinkForm', () => {
     expect(onGenerate).toHaveBeenCalled()
   })
 
-  it('n’appelle pas onRevoke tant que la confirmation n’est pas validée', async () => {
+  it('n’appelle ni onRevoke ni onRevokeAndDelete tant qu’aucun choix n’est fait dans la modale', async () => {
     const onRevoke = vi.fn()
-    render(<VehicleDeviceLinkForm {...defaultProps} isLinked onRevoke={onRevoke} />)
+    const onRevokeAndDelete = vi.fn()
+    render(<VehicleDeviceLinkForm {...defaultProps} isLinked onRevoke={onRevoke} onRevokeAndDelete={onRevokeAndDelete} />)
 
     await userEvent.click(screen.getByTestId('btn-revoke-device-key'))
 
     expect(onRevoke).not.toHaveBeenCalled()
+    expect(onRevokeAndDelete).not.toHaveBeenCalled()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
-  it('appelle onRevoke une fois la confirmation validée', async () => {
+  it('appelle onRevoke (sans suppression) au clic sur "Révoquer"', async () => {
     const onRevoke = vi.fn()
-    render(<VehicleDeviceLinkForm {...defaultProps} isLinked onRevoke={onRevoke} />)
+    const onRevokeAndDelete = vi.fn()
+    render(<VehicleDeviceLinkForm {...defaultProps} isLinked onRevoke={onRevoke} onRevokeAndDelete={onRevokeAndDelete} />)
 
     await userEvent.click(screen.getByTestId('btn-revoke-device-key'))
-    await userEvent.click(screen.getByTestId('btn-confirm-delete'))
+    await userEvent.click(screen.getByTestId('btn-revoke-only'))
 
     expect(onRevoke).toHaveBeenCalled()
+    expect(onRevokeAndDelete).not.toHaveBeenCalled()
+  })
+
+  it('appelle onRevokeAndDelete au clic sur "Révoquer et supprimer toutes les données"', async () => {
+    const onRevoke = vi.fn()
+    const onRevokeAndDelete = vi.fn()
+    render(<VehicleDeviceLinkForm {...defaultProps} isLinked onRevoke={onRevoke} onRevokeAndDelete={onRevokeAndDelete} />)
+
+    await userEvent.click(screen.getByTestId('btn-revoke-device-key'))
+    await userEvent.click(screen.getByTestId('btn-revoke-and-delete'))
+
+    expect(onRevokeAndDelete).toHaveBeenCalled()
+    expect(onRevoke).not.toHaveBeenCalled()
+  })
+
+  it('ferme la modale sans rien appeler au clic sur Annuler', async () => {
+    const onRevoke = vi.fn()
+    const onRevokeAndDelete = vi.fn()
+    render(<VehicleDeviceLinkForm {...defaultProps} isLinked onRevoke={onRevoke} onRevokeAndDelete={onRevokeAndDelete} />)
+
+    await userEvent.click(screen.getByTestId('btn-revoke-device-key'))
+    await userEvent.click(screen.getByTestId('btn-cancel-revoke'))
+
+    expect(onRevoke).not.toHaveBeenCalled()
+    expect(onRevokeAndDelete).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('ouvre la popup de documentation HTTP au clic', async () => {

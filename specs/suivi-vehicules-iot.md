@@ -21,7 +21,7 @@ Acteur technique additionnel : la carte IoT elle-même, qui pousse ses données 
 - Clé API invalide ou révoquée → l'endpoint rejette la requête (401), aucune écriture.
 - Payload malformé (coordonnées hors bornes valides, champs manquants) → rejet (400), aucune écriture.
 - Device associé à un inventaire supprimé entretemps → rejet, pas de crash silencieux.
-- Admin révoque une clé API → la carte associée ne peut plus écrire tant qu'une nouvelle clé n'est pas générée et reflashée.
+- Admin révoque une clé API → la carte associée ne peut plus écrire tant qu'une nouvelle clé n'est pas générée et reflashée. Deux options à la révocation : garder l'historique (rotation de clé) ou tout supprimer (erreur d'association) — cf. règles métier.
 - Requêtes quasi simultanées du même device (retry réseau côté carte) → pas de contrainte d'idempotence stricte requise, un point GPS dupliqué proche n'a pas d'impact fonctionnel et la déduplication géographique limite déjà la redondance.
 - Ping reçu avec un horodatage antérieur au dernier point retenu (livraison hors-ordre) → ignoré silencieusement, aucune écriture.
 - Flux de requêtes anormalement élevé sur une clé API → requêtes excédentaires rejetées (limite de débit).
@@ -45,6 +45,7 @@ Acteur technique additionnel : la carte IoT elle-même, qui pousse ses données 
 - Les points d'historique de position sont conservés 90 jours, puis supprimés automatiquement.
 - Vérification d'appartenance : toute lecture backoffice de l'état ou de l'historique d'un véhicule vérifie que l'inventaire appartient à l'association de l'utilisateur connecté.
 - Aucun champ `type` n'est ajouté à `Inventory` pour cette feature : un device peut être associé à n'importe quel inventaire existant, sans distinction formelle "véhicule".
+- Révoquer une clé propose deux actions distinctes : "Révoquer" (garde l'état courant et l'historique de positions — cas d'usage : rotation de clé) et "Révoquer et supprimer toutes les données" (supprime aussi l'état courant et tout l'historique de positions associés — cas d'usage : association faite par erreur). Cette seconde option est irréversible et nécessite un nettoyage par lots de l'historique.
 - Un véhicule alimenté (coupe-circuit non activé) dont la position/état n'a pas changé depuis plus de 4h (seuil fixe) déclenche une alerte mail.
 - Deux déclencheurs indépendants vérifient ce seuil, avec le même garde-fou (`poweredAlertSent`) pour ne jamais doubler l'envoi :
   - à chaque ping reçu sans changement (position/état identiques) — détection quasi immédiate tant que le device continue d'émettre ;
@@ -55,14 +56,16 @@ Acteur technique additionnel : la carte IoT elle-même, qui pousse ses données 
 ## Composants UI à créer
 - `VehicleFleetStatus` — vue d'ensemble backoffice listant uniquement les véhicules ayant déjà un device associé : nom du véhicule, état coupe-circuit, position courante, durée depuis laquelle cet état/position est stable, date du dernier ping (`lastSeenAt`). Bouton "Ajouter" (en-tête et état vide) pour ouvrir `AddVehicleDeviceForm`.
 - `AddVehicleDeviceForm` — modale de sélection d'un inventaire parmi ceux sans device associé, puis génération de sa clé API (affichée une fois).
-- `VehicleDeviceLinkForm` — encart "Device IoT" de la page détail d'un véhicule ; régénération (rotation en un geste) et révocation de la clé API, plus un accès à `VehicleApiDocModal`.
+- `VehicleDeviceLinkForm` — encart "Device IoT" de la page détail d'un véhicule ; régénération (rotation en un geste) et révocation de la clé API (via `VehicleRevokeDialog`), plus un accès à `VehicleApiDocModal`.
+- `VehicleRevokeDialog` — confirmation de révocation à deux choix : "Révoquer" (garde l'historique) ou "Révoquer et supprimer toutes les données" (efface tout).
 - `VehicleApiDocModal` — popup documentant le format de la requête HTTP attendue par l'endpoint (méthode, en-têtes, corps JSON, codes de réponse), pour faciliter le paramétrage du firmware.
 - `VehiclePositionHistoryMap` — carte affichant l'historique de positions d'un véhicule.
 - `TimeRangeSelector` — sélecteur d'échelle de temps pour l'historique affiché.
 
 ## Use cases à implémenter
 - `linkDeviceUseCase(input)` → `Result<{ inventoryId, apiKey }>`
-- `revokeDeviceUseCase(inventoryId)` → `Result<undefined>`
+- `revokeDeviceUseCase(inventoryId)` → `Result<undefined>` — révoque la clé, garde l'état courant et l'historique.
+- `revokeDeviceAndDeleteDataUseCase(inventoryId)` → `Result<undefined>` — révoque la clé puis supprime l'état courant et tout l'historique de positions du véhicule.
 - `receiveVehicleStatusUseCase(input)` → `Result<undefined>` — appelé par l'endpoint, authentifie via la clé, met à jour l'état courant, décide de l'enregistrement d'un point d'historique.
 - `getFleetStatusUseCase(associationId)` → `Result<VehicleStatus[]>` — uniquement les inventaires ayant un device associé.
 - `listUnlinkedInventoriesUseCase(associationId)` → `Result<UnlinkedInventory[]>` — inventaires de l'association sans device associé, pour la modale d'ajout.

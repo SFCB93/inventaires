@@ -30,6 +30,16 @@ export async function revokeDeviceUseCase(inventoryId: string, associationId: st
   return vehicleTrackingRepository.revokeDeviceKey(inventoryId)
 }
 
+export async function revokeDeviceAndDeleteDataUseCase(inventoryId: string, associationId: string): Promise<Result<void>> {
+  const ownership = await inventoryRepository.checkInventoryOwnership(inventoryId, associationId)
+  if (!ownership.ok) return ownership
+
+  const revokeResult = await vehicleTrackingRepository.revokeDeviceKey(inventoryId)
+  if (!revokeResult.ok) return revokeResult
+
+  return vehicleTrackingRepository.deleteVehicleData(inventoryId)
+}
+
 export interface VehicleDetail {
   name: string
   isLinked: boolean

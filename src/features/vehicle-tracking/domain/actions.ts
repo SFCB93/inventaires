@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from '@/shared/lib/auth'
 import {
   linkDeviceUseCase,
   revokeDeviceUseCase,
+  revokeDeviceAndDeleteDataUseCase,
   listUnlinkedInventoriesUseCase,
   getVehiclePositionHistoryUseCase,
 } from './use-cases'
@@ -27,6 +28,17 @@ export async function revokeDeviceAction(inventoryId: string): Promise<Result<vo
   if (!user) return err('Non authentifié.')
 
   const result = await revokeDeviceUseCase(inventoryId, user.associationId)
+  if (!result.ok) return result
+  revalidatePath('/dashboard/vehicules')
+  revalidatePath(`/dashboard/vehicules/${inventoryId}`)
+  return ok(undefined)
+}
+
+export async function revokeDeviceAndDeleteDataAction(inventoryId: string): Promise<Result<void>> {
+  const user = await getAuthenticatedUser()
+  if (!user) return err('Non authentifié.')
+
+  const result = await revokeDeviceAndDeleteDataUseCase(inventoryId, user.associationId)
   if (!result.ok) return result
   revalidatePath('/dashboard/vehicules')
   revalidatePath(`/dashboard/vehicules/${inventoryId}`)

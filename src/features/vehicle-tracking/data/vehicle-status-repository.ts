@@ -3,7 +3,7 @@ import { FieldPath, Timestamp } from 'firebase-admin/firestore'
 import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
-import { chunkArray, FIRESTORE_IN_LIMIT } from '@/shared/lib/array'
+import { chunkArray, FIRESTORE_IN_LIMIT, FIRESTORE_BATCH_LIMIT } from '@/shared/lib/array'
 import { POSITION_RETENTION_DAYS, MS_PER_DAY } from '../domain/constants'
 
 export interface VehicleStatusRecord {
@@ -115,6 +115,24 @@ export async function listInventoryNames(inventoryIds: string[]): Promise<Result
     return ok(names)
   } catch (error) {
     return err(`Impossible de charger les noms des véhicules. Erreur: ${(error as Error).message}`)
+  }
+}
+
+export async function deleteVehicleData(inventoryId: string): Promise<Result<void>> {
+  try {
+    await adminDb.collection('vehicleStatuses').doc(inventoryId).delete()
+
+    const snap = await adminDb.collection('vehiclePositions').where('inventoryId', '==', inventoryId).get()
+    const refs = snap.docs.map((doc) => doc.ref)
+    for (const chunk of chunkArray(refs, FIRESTORE_BATCH_LIMIT)) {
+      const batch = adminDb.batch()
+      chunk.forEach((ref) => batch.delete(ref))
+      await batch.commit()
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(`Impossible de supprimer les données du véhicule. Erreur: ${(error as Error).message}`)
   }
 }
 

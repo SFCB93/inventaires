@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { DeleteConfirmDialog } from '@/shared/ui/DeleteConfirmDialog'
+import { VehicleRevokeDialog } from './VehicleRevokeDialog'
 import { VehicleApiDocModal } from './VehicleApiDocModal'
 
 interface VehicleDeviceLinkFormProps {
@@ -11,6 +11,7 @@ interface VehicleDeviceLinkFormProps {
   isSubmitting?: boolean
   onGenerate: () => void
   onRevoke: () => void
+  onRevokeAndDelete: () => void
 }
 
 export function VehicleDeviceLinkForm({
@@ -20,8 +21,9 @@ export function VehicleDeviceLinkForm({
   isSubmitting = false,
   onGenerate,
   onRevoke,
+  onRevokeAndDelete,
 }: VehicleDeviceLinkFormProps) {
-  const [isRevokeConfirmOpen, setIsRevokeConfirmOpen] = useState(false)
+  const [isRevokeDialogOpen, setIsRevokeDialogOpen] = useState(false)
   const [isApiDocOpen, setIsApiDocOpen] = useState(false)
 
   return (
@@ -66,7 +68,7 @@ export function VehicleDeviceLinkForm({
           <button
             type="button"
             data-testid="btn-revoke-device-key"
-            onClick={() => setIsRevokeConfirmOpen(true)}
+            onClick={() => setIsRevokeDialogOpen(true)}
             disabled={isSubmitting}
             className="px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50
                        transition-colors disabled:opacity-50"
@@ -76,17 +78,19 @@ export function VehicleDeviceLinkForm({
         )}
       </div>
 
-      <DeleteConfirmDialog
-        isOpen={isRevokeConfirmOpen}
-        title="Révoquer la clé du device"
-        message={`Le device associé à ${inventoryName} ne pourra plus envoyer de données tant qu'une nouvelle clé n'est pas générée.`}
-        confirmLabel="Révoquer"
-        isDeleting={isSubmitting}
-        onConfirm={() => {
+      <VehicleRevokeDialog
+        isOpen={isRevokeDialogOpen}
+        inventoryName={inventoryName}
+        isSubmitting={isSubmitting}
+        onRevoke={() => {
           onRevoke()
-          setIsRevokeConfirmOpen(false)
+          setIsRevokeDialogOpen(false)
         }}
-        onCancel={() => setIsRevokeConfirmOpen(false)}
+        onRevokeAndDelete={() => {
+          onRevokeAndDelete()
+          setIsRevokeDialogOpen(false)
+        }}
+        onCancel={() => setIsRevokeDialogOpen(false)}
       />
 
       <VehicleApiDocModal isOpen={isApiDocOpen} onClose={() => setIsApiDocOpen(false)} />

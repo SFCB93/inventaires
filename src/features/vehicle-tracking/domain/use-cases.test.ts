@@ -3,6 +3,7 @@ import { ok, err } from '@/shared/domain/result'
 import {
   linkDeviceUseCase,
   revokeDeviceUseCase,
+  revokeDeviceAndDeleteDataUseCase,
   getVehicleDetailUseCase,
   receiveVehicleStatusUseCase,
   getFleetStatusUseCase,
@@ -29,6 +30,7 @@ vi.mock('../data/repository', () => ({
     listFleetStatus: vi.fn(),
     listInventoryNames: vi.fn(),
     listPositionHistory: vi.fn(),
+    deleteVehicleData: vi.fn(),
   },
 }))
 
@@ -100,6 +102,40 @@ describe('revokeDeviceUseCase', () => {
 
     expect(result).toEqual(err('Accès non autorisé.'))
     expect(vehicleTrackingRepository.revokeDeviceKey).not.toHaveBeenCalled()
+  })
+})
+
+describe('revokeDeviceAndDeleteDataUseCase', () => {
+  it('révoque la clé puis supprime les données si le véhicule appartient à l’association', async () => {
+    vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
+    vi.mocked(vehicleTrackingRepository.revokeDeviceKey).mockResolvedValue(ok(undefined))
+    vi.mocked(vehicleTrackingRepository.deleteVehicleData).mockResolvedValue(ok(undefined))
+
+    const result = await revokeDeviceAndDeleteDataUseCase(INV_ID, ASSOC_ID)
+
+    expect(result).toEqual(ok(undefined))
+    expect(vehicleTrackingRepository.revokeDeviceKey).toHaveBeenCalledWith(INV_ID)
+    expect(vehicleTrackingRepository.deleteVehicleData).toHaveBeenCalledWith(INV_ID)
+  })
+
+  it('ne supprime rien si la vérification d’appartenance échoue', async () => {
+    vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(err('Accès non autorisé.'))
+
+    const result = await revokeDeviceAndDeleteDataUseCase(INV_ID, ASSOC_ID)
+
+    expect(result).toEqual(err('Accès non autorisé.'))
+    expect(vehicleTrackingRepository.revokeDeviceKey).not.toHaveBeenCalled()
+    expect(vehicleTrackingRepository.deleteVehicleData).not.toHaveBeenCalled()
+  })
+
+  it('ne supprime pas les données si la révocation de la clé échoue', async () => {
+    vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
+    vi.mocked(vehicleTrackingRepository.revokeDeviceKey).mockResolvedValue(err('Erreur Firestore.'))
+
+    const result = await revokeDeviceAndDeleteDataUseCase(INV_ID, ASSOC_ID)
+
+    expect(result).toEqual(err('Erreur Firestore.'))
+    expect(vehicleTrackingRepository.deleteVehicleData).not.toHaveBeenCalled()
   })
 })
 

@@ -6,6 +6,7 @@ import {
   listFleetStatus,
   listInventoryNames,
   listPositionHistory,
+  deleteVehicleData,
 } from './vehicle-status-repository'
 import { listPoweredTooLong, markPoweredAlertSent, listAssociationNotificationConfigs } from './powered-alert-repository'
 
@@ -21,6 +22,7 @@ export const vehicleTrackingRepository = {
   listFleetStatus,
   listInventoryNames,
   listPositionHistory,
+  deleteVehicleData,
   listPoweredTooLong,
   markPoweredAlertSent,
   listAssociationNotificationConfigs,

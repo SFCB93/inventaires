@@ -2,11 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { ok, err } from '@/shared/domain/result'
 import { useVehicleDetailPage } from './useVehicleDetailPage'
-import { linkDeviceAction, revokeDeviceAction, getVehiclePositionHistoryAction } from '../../domain/actions'
+import {
+  linkDeviceAction,
+  revokeDeviceAction,
+  revokeDeviceAndDeleteDataAction,
+  getVehiclePositionHistoryAction,
+} from '../../domain/actions'
 
 vi.mock('../../domain/actions', () => ({
   linkDeviceAction: vi.fn(),
   revokeDeviceAction: vi.fn(),
+  revokeDeviceAndDeleteDataAction: vi.fn(),
   getVehiclePositionHistoryAction: vi.fn(),
 }))
 
@@ -90,6 +96,31 @@ describe('useVehicleDetailPage — lien du device', () => {
     const { result } = renderHook(() => useVehicleDetailPage(INV_ID, true))
 
     await act(async () => result.current.handleRevoke())
+
+    expect(result.current.isLinked).toBe(true)
+    expect(result.current.deviceError).toBe('Erreur réseau.')
+  })
+
+  it('passe isLinked à false et vide l’historique après révocation avec suppression', async () => {
+    vi.mocked(getVehiclePositionHistoryAction).mockResolvedValue(ok([
+      { lat: 48.85, lng: 2.35, timestamp: new Date(), isCircuitCut: false },
+    ]))
+    vi.mocked(revokeDeviceAndDeleteDataAction).mockResolvedValue(ok(undefined))
+    const { result } = renderHook(() => useVehicleDetailPage(INV_ID, true))
+    await waitFor(() => expect(result.current.positions).toHaveLength(1))
+
+    await act(async () => result.current.handleRevokeAndDelete())
+
+    expect(result.current.isLinked).toBe(false)
+    expect(result.current.positions).toEqual([])
+    expect(result.current.historyError).toBeNull()
+  })
+
+  it('affiche une erreur sans rien changer si la révocation avec suppression échoue', async () => {
+    vi.mocked(revokeDeviceAndDeleteDataAction).mockResolvedValue(err('Erreur réseau.'))
+    const { result } = renderHook(() => useVehicleDetailPage(INV_ID, true))
+
+    await act(async () => result.current.handleRevokeAndDelete())
 
     expect(result.current.isLinked).toBe(true)
     expect(result.current.deviceError).toBe('Erreur réseau.')
