@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getAuthenticatedUser } from '@/shared/lib/auth'
 import { getVehicleDetailUseCase } from '@/features/vehicle-tracking/domain/use-cases'
+import { getLogbookHistoryUseCase } from '@/features/logbook/domain/use-cases'
 import { VehicleDetailPage } from '@/features/vehicle-tracking/ui/VehicleDetailPage'
 
 export default async function VehiculeDetailPage({
@@ -12,14 +13,19 @@ export default async function VehiculeDetailPage({
   const user = await getAuthenticatedUser()
   if (!user) notFound()
 
-  const result = await getVehicleDetailUseCase(inventoryId, user.associationId)
-  if (!result.ok) notFound()
+  const [vehicleResult, logbookResult] = await Promise.all([
+    getVehicleDetailUseCase(inventoryId, user.associationId),
+    getLogbookHistoryUseCase(inventoryId, user.associationId),
+  ])
+  if (!vehicleResult.ok) notFound()
 
   return (
     <VehicleDetailPage
       inventoryId={inventoryId}
-      inventoryName={result.value.name}
-      isLinked={result.value.isLinked}
+      inventoryName={vehicleResult.value.name}
+      isLinked={vehicleResult.value.isLinked}
+      logbookEntries={logbookResult.ok ? logbookResult.value : []}
+      logbookError={logbookResult.ok ? undefined : logbookResult.error}
     />
   )
 }
