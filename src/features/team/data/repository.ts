@@ -25,7 +25,7 @@ export const teamRepository = {
 
   async createAdminAccount(email: string, associationId: string): Promise<Result<{ resetLink: string | undefined }>> {
     try {
-      let uid: string
+      let uid: string | undefined = undefined
       try {
         const authUser = await adminAuth.createUser({ email })
         uid = authUser.uid
@@ -33,7 +33,8 @@ export const teamRepository = {
       } catch (error) {
         const code = (error as { code?: string }).code
         if (code !== 'auth/email-already-exists') {
-          console.error('[createAdminAccount]', error)
+          if (uid) console.error(`[createAdminAccount] Compte Auth créé (${uid}) mais échec Firestore — nettoyage manuel requis.`, error)
+          else console.error('[createAdminAccount]', error)
           return err(`Impossible de créer le compte. Erreur: ${(error as Error).message}`)
         }
         // User already exists in Auth — add this association if they're a regular admin
