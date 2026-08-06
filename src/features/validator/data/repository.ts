@@ -55,12 +55,12 @@ export const validatorRepository = {
 
       const compartmentIds = compartmentsSnap.docs.map((d) => d.id);
 
-      const itemDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []
-      for (const chunk of chunkArray(compartmentIds, FIRESTORE_IN_LIMIT)) {
-        const snap = await adminDb.collection("materiels").where("compartmentId", "in", chunk).get()
-        itemDocs.push(...snap.docs)
-      }
-      const itemsSnap = { docs: itemDocs }
+      const itemSnaps = await Promise.all(
+        chunkArray(compartmentIds, FIRESTORE_IN_LIMIT).map((chunk) =>
+          adminDb.collection("materiels").where("compartmentId", "in", chunk).get(),
+        ),
+      )
+      const itemsSnap = { docs: itemSnaps.flatMap((snap) => snap.docs) }
 
       const itemsByCompartment = new Map<string, Item[]>();
       for (const doc of itemsSnap.docs) {

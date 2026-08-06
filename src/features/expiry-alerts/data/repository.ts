@@ -3,6 +3,7 @@ import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
 import { DEFAULT_ALERT_THRESHOLD_DAYS, DEFAULT_ALERT_INTERVAL_DAYS } from '@/shared/lib/alert-defaults'
+import { chunkArray, FIRESTORE_BATCH_LIMIT } from '@/shared/lib/array'
 
 export type AssociationAlertConfig = {
   id: string
@@ -59,16 +60,18 @@ export const expiryAlertsRepository = {
   ): Promise<void> {
     if (items.length === 0) return
     try {
-      const batch = adminDb.batch()
-      for (const item of items) {
-        const ref = adminDb.collection('expiry-alert-log').doc(item.itemId)
-        batch.set(ref, {
-          associationId: item.associationId,
-          inventoryId: item.inventoryId,
-          lastSentAt: FieldValue.serverTimestamp(),
-        })
+      for (const chunk of chunkArray(items, FIRESTORE_BATCH_LIMIT)) {
+        const batch = adminDb.batch()
+        for (const item of chunk) {
+          const ref = adminDb.collection('expiry-alert-log').doc(item.itemId)
+          batch.set(ref, {
+            associationId: item.associationId,
+            inventoryId: item.inventoryId,
+            lastSentAt: FieldValue.serverTimestamp(),
+          })
+        }
+        await batch.commit()
       }
-      await batch.commit()
     } catch (error) {
       console.error('[expiryAlertsRepository.upsertAlertLogEntries]', error)
     }

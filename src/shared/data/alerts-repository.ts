@@ -34,11 +34,15 @@ async function batchGetNames(
 ): Promise<Map<string, string>> {
   const result = new Map<string, string>();
   if (ids.length === 0) return result;
-  for (const chunk of chunkArray(ids, FIRESTORE_IN_LIMIT)) {
-    const snap = await adminDb
-      .collection(collectionName)
-      .where(FieldPath.documentId(), "in", chunk)
-      .get();
+  const snaps = await Promise.all(
+    chunkArray(ids, FIRESTORE_IN_LIMIT).map((chunk) =>
+      adminDb
+        .collection(collectionName)
+        .where(FieldPath.documentId(), "in", chunk)
+        .get(),
+    ),
+  );
+  for (const snap of snaps) {
     for (const doc of snap.docs) result.set(doc.id, doc.data().name ?? "");
   }
   return result;
@@ -96,14 +100,14 @@ export async function getActiveAlerts(
       source: "control" | "correction";
     };
     const entries = new Map<string, Entry>();
-    const allControlDocs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
-    for (const chunk of chunkArray(inventoryIds, FIRESTORE_IN_LIMIT)) {
-      const snap = await adminDb
-        .collection("controles")
-        .where("inventoryId", "in", chunk)
-        .get();
-      allControlDocs.push(...snap.docs);
-    }
+    const controlSnaps = await Promise.all(
+      chunkArray(inventoryIds, FIRESTORE_IN_LIMIT).map((chunk) =>
+        adminDb.collection("controles").where("inventoryId", "in", chunk).get(),
+      ),
+    );
+    const allControlDocs: FirebaseFirestore.QueryDocumentSnapshot[] = controlSnaps.flatMap(
+      (snap) => snap.docs,
+    );
     // Sort oldest first so the most recent control always overwrites previous ones
     allControlDocs.sort(
       (a, b) =>

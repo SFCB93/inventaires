@@ -33,31 +33,33 @@ export async function runVehiclePoweredAlertsCronUseCase(): Promise<Result<Power
       byAssociation.set(vehicle.associationId, list)
     }
 
-    let sent = 0
-    const errors: string[] = []
+    const outcomes = await Promise.all(
+      Array.from(byAssociation.entries()).map(async ([associationId, vehicles]) => {
+        try {
+          const config = configsResult.value.get(associationId)
+          if (!config || config.notificationEmails.length === 0) return { sent: false, error: null }
 
-    for (const [associationId, vehicles] of byAssociation) {
-      try {
-        const config = configsResult.value.get(associationId)
-        if (!config || config.notificationEmails.length === 0) continue
+          await sendVehiclePoweredAlertEmail({
+            recipients: config.notificationEmails,
+            associationName: config.name,
+            vehicles: vehicles.map((vehicle) => ({
+              name: namesResult.value.get(vehicle.inventoryId) ?? 'Véhicule',
+              since: vehicle.stableSince,
+            })),
+          })
 
-        await sendVehiclePoweredAlertEmail({
-          recipients: config.notificationEmails,
-          associationName: config.name,
-          vehicles: vehicles.map((vehicle) => ({
-            name: namesResult.value.get(vehicle.inventoryId) ?? 'Véhicule',
-            since: vehicle.stableSince,
-          })),
-        })
-
-        for (const vehicle of vehicles) {
-          await vehicleTrackingRepository.markPoweredAlertSent(vehicle.inventoryId)
+          await Promise.all(
+            vehicles.map((vehicle) => vehicleTrackingRepository.markPoweredAlertSent(vehicle.inventoryId)),
+          )
+          return { sent: true, error: null }
+        } catch (error) {
+          return { sent: false, error: `${associationId}: ${(error as Error).message}` }
         }
-        sent++
-      } catch (error) {
-        errors.push(`${associationId}: ${(error as Error).message}`)
-      }
-    }
+      }),
+    )
+
+    const sent = outcomes.filter((outcome) => outcome.sent).length
+    const errors = outcomes.map((outcome) => outcome.error).filter((error): error is string => error !== null)
 
     return ok({ processed: overdueResult.value.length, sent, errors })
   } catch (error) {
