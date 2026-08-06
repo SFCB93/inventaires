@@ -9,3 +9,7 @@ export function todayPlusDays(n: number): Date {
   d.setDate(d.getDate() + n)
   return d
 }
+
+export function todayMinusDays(n: number): Date {
+  return todayPlusDays(-n)
+}
