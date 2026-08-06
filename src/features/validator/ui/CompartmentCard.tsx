@@ -32,7 +32,15 @@ export function CompartmentCard({ name, current, total, canGoBack, onBack, onEnt
       <div className="flex-1 flex flex-col px-2 pb-2">
         <div
           data-testid="compartment-card"
+          role="button"
+          tabIndex={0}
           onClick={onEnter}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onEnter()
+            }
+          }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
