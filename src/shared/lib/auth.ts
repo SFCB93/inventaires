@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { adminAuth, adminDb } from '@/shared/data/firebase-admin'
 
 export type AuthenticatedUser = {
@@ -7,6 +7,21 @@ export type AuthenticatedUser = {
   associationId: string
   associationIds: string[]
   role: 'admin' | 'superadmin'
+}
+
+export const ACTING_AS_COOKIE = 'acting-as'
+export const SESSION_DURATION_S = 60 * 60 * 24 * 5
+
+export async function getLoginUrl(): Promise<string | undefined> {
+  try {
+    const h = await headers()
+    const host = h.get('host')
+    if (!host) return undefined
+    const proto = process.env.NODE_ENV === 'production' ? 'https' : 'http'
+    return `${proto}://${host}/login`
+  } catch {
+    return undefined
+  }
 }
 
 export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | null> => {
@@ -27,7 +42,7 @@ export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | 
     let associationId = ''
 
     if (role === 'superadmin') {
-      const actingAs = cookieStore.get('acting-as')
+      const actingAs = cookieStore.get(ACTING_AS_COOKIE)
       if (actingAs?.value) {
         const assocDoc = await adminDb.collection('associations').doc(actingAs.value).get()
         if (assocDoc.exists) associationId = actingAs.value
@@ -35,7 +50,7 @@ export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | 
     } else if (associationIds.length === 1) {
       associationId = associationIds[0]
     } else if (associationIds.length > 1) {
-      const actingAs = cookieStore.get('acting-as')
+      const actingAs = cookieStore.get(ACTING_AS_COOKIE)
       if (actingAs?.value && associationIds.includes(actingAs.value)) {
         associationId = actingAs.value
       }

@@ -1,28 +1,13 @@
 'use server'
 
-import { cookies, headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { ok } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
-import { getAuthenticatedUser } from '@/shared/lib/auth'
+import { getAuthenticatedUser, getLoginUrl, ACTING_AS_COOKIE, SESSION_DURATION_S } from '@/shared/lib/auth'
 import { createAssociationUseCase } from './use-cases'
 import type { CreateAssociationInput } from './types'
-
-async function getLoginUrl(): Promise<string | undefined> {
-  try {
-    const h = await headers()
-    const host = h.get('host')
-    if (!host) return undefined
-    const proto = process.env.NODE_ENV === 'production' ? 'https' : 'http'
-    return `${proto}://${host}/login`
-  } catch {
-    return undefined
-  }
-}
-
-const ACTING_AS_COOKIE = 'acting-as'
-const SESSION_DURATION_S = 60 * 60 * 24 * 5
 
 export async function enterAssociationAction(associationId: string) {
   const user = await getAuthenticatedUser()
