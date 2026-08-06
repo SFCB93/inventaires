@@ -2,7 +2,9 @@ import type { TimeRange } from "./types";
 
 export const DEDUP_DISTANCE_METERS = 10;
 export const MIN_PING_INTERVAL_SECONDS = 55;
+export const MAX_TIMESTAMP_DRIFT_SECONDS = 60;
 export const POSITION_RETENTION_DAYS = 90;
+export const MAX_POSITION_HISTORY_POINTS = 5000;
 export const POWERED_ALERT_THRESHOLD_HOURS = 4;
 
 export const MS_PER_SECOND = 1000;

@@ -4,7 +4,7 @@ import { adminDb } from '@/shared/data/firebase-admin'
 import { ok, err } from '@/shared/domain/result'
 import type { Result } from '@/shared/domain/result'
 import { chunkArray, FIRESTORE_IN_LIMIT, FIRESTORE_BATCH_LIMIT } from '@/shared/lib/array'
-import { POSITION_RETENTION_DAYS, MS_PER_DAY } from '../domain/constants'
+import { POSITION_RETENTION_DAYS, MS_PER_DAY, MAX_POSITION_HISTORY_POINTS } from '../domain/constants'
 
 export interface VehicleStatusRecord {
   associationId: string
@@ -146,6 +146,7 @@ export async function listPositionHistory(
       .where('inventoryId', '==', inventoryId)
       .where('timestamp', '>=', Timestamp.fromDate(since))
       .orderBy('timestamp', 'asc')
+      .limitToLast(MAX_POSITION_HISTORY_POINTS)
       .get()
     return ok(
       snap.docs.map((doc) => {

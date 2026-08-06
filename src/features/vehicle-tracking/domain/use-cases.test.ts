@@ -15,7 +15,7 @@ import { inventoryRepository } from '@/features/inventories/data/repository'
 import { generateApiKey, hashApiKey } from './api-key'
 import { haversineDistanceMeters } from './geo'
 import { sendPoweredAlertIfDue } from './powered-alert-use-case'
-import { DEDUP_DISTANCE_METERS, MIN_PING_INTERVAL_SECONDS, MS_PER_SECOND, MS_PER_HOUR, TIME_RANGE_HOURS, ERROR_UNAUTHORIZED, ERROR_RATE_LIMITED } from './constants'
+import { DEDUP_DISTANCE_METERS, MIN_PING_INTERVAL_SECONDS, MAX_TIMESTAMP_DRIFT_SECONDS, MS_PER_SECOND, MS_PER_HOUR, TIME_RANGE_HOURS, ERROR_UNAUTHORIZED, ERROR_RATE_LIMITED } from './constants'
 
 vi.mock('../data/repository', () => ({
   vehicleTrackingRepository: {
@@ -203,10 +203,17 @@ describe('receiveVehicleStatusUseCase', () => {
     expect(result).toEqual(err('Horodatage invalide.'))
   })
 
+  it('rejette un horodatage trop éloigné de l’horloge serveur (dérive)', async () => {
+    const farFuture = new Date(baseInput.timestamp.getTime() + (MAX_TIMESTAMP_DRIFT_SECONDS + 1) * MS_PER_SECOND)
+    const result = await receiveVehicleStatusUseCase({ ...baseInput, timestamp: farFuture }, baseInput.timestamp)
+    expect(result).toEqual(err('Horodatage invalide.'))
+    expect(vehicleTrackingRepository.findDeviceByKeyHash).not.toHaveBeenCalled()
+  })
+
   it('rejette une clé API inconnue', async () => {
     vi.mocked(vehicleTrackingRepository.findDeviceByKeyHash).mockResolvedValue(ok(null))
 
-    const result = await receiveVehicleStatusUseCase(baseInput)
+    const result = await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
 
     expect(result).toEqual(err(ERROR_UNAUTHORIZED))
     expect(vehicleTrackingRepository.getVehicleStatus).not.toHaveBeenCalled()
@@ -216,7 +223,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(vehicleTrackingRepository.findDeviceByKeyHash).mockResolvedValue(ok({ inventoryId: INV_ID, associationId: ASSOC_ID }))
     vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(err('Inventaire introuvable.'))
 
-    const result = await receiveVehicleStatusUseCase(baseInput)
+    const result = await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
 
     expect(result).toEqual(err(ERROR_UNAUTHORIZED))
     expect(vehicleTrackingRepository.getVehicleStatus).not.toHaveBeenCalled()
@@ -228,7 +235,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(vehicleTrackingRepository.getVehicleStatus).mockResolvedValue(ok(null))
     vi.mocked(vehicleTrackingRepository.recordVehiclePoint).mockResolvedValue(ok(undefined))
 
-    const result = await receiveVehicleStatusUseCase(baseInput)
+    const result = await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
 
     expect(result).toEqual(ok(undefined))
     expect(vehicleTrackingRepository.recordVehiclePoint).toHaveBeenCalledWith({
@@ -250,7 +257,7 @@ describe('receiveVehicleStatusUseCase', () => {
       stableSince: new Date('2026-01-01T10:00:00Z'), lastSeenAt: baseInput.timestamp, poweredAlertSent: false,
     }))
 
-    const result = await receiveVehicleStatusUseCase(baseInput)
+    const result = await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
 
     expect(result).toEqual(ok(undefined))
     expect(vehicleTrackingRepository.recordVehiclePoint).not.toHaveBeenCalled()
@@ -266,7 +273,25 @@ describe('receiveVehicleStatusUseCase', () => {
       stableSince: lastSeenAt, lastSeenAt, poweredAlertSent: false,
     }))
 
-    const result = await receiveVehicleStatusUseCase(baseInput)
+    const result = await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
+
+    expect(result).toEqual(err(ERROR_RATE_LIMITED))
+    expect(vehicleTrackingRepository.recordVehiclePoint).not.toHaveBeenCalled()
+  })
+
+  it('rejette un ping trop rapproché même si le timestamp client simule un grand écart (anti-contournement)', async () => {
+    // Deux requêtes réelles quasi simultanées ; seul le timestamp client prétend un écart > MIN_PING_INTERVAL_SECONDS.
+    const realNow = baseInput.timestamp
+    const forgedClientTimestamp = new Date(realNow.getTime() + (MIN_PING_INTERVAL_SECONDS + 1) * MS_PER_SECOND)
+    const lastSeenAt = new Date(realNow.getTime() - 1 * MS_PER_SECOND)
+    vi.mocked(vehicleTrackingRepository.findDeviceByKeyHash).mockResolvedValue(ok({ inventoryId: INV_ID, associationId: ASSOC_ID }))
+    vi.mocked(inventoryRepository.checkInventoryOwnership).mockResolvedValue(ok(undefined))
+    vi.mocked(vehicleTrackingRepository.getVehicleStatus).mockResolvedValue(ok({
+      associationId: ASSOC_ID, lat: 48.85, lng: 2.35, isCircuitCut: false,
+      stableSince: lastSeenAt, lastSeenAt, poweredAlertSent: false,
+    }))
+
+    const result = await receiveVehicleStatusUseCase({ ...baseInput, timestamp: forgedClientTimestamp }, realNow)
 
     expect(result).toEqual(err(ERROR_RATE_LIMITED))
     expect(vehicleTrackingRepository.recordVehiclePoint).not.toHaveBeenCalled()
@@ -284,7 +309,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(haversineDistanceMeters).mockReturnValue(DEDUP_DISTANCE_METERS - 1)
     vi.mocked(vehicleTrackingRepository.touchLastSeen).mockResolvedValue(ok(undefined))
 
-    const result = await receiveVehicleStatusUseCase(baseInput)
+    const result = await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
 
     expect(result).toEqual(ok(undefined))
     expect(vehicleTrackingRepository.touchLastSeen).toHaveBeenCalledWith(INV_ID, baseInput.timestamp)
@@ -311,7 +336,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(haversineDistanceMeters).mockReturnValue(DEDUP_DISTANCE_METERS - 1)
     vi.mocked(vehicleTrackingRepository.touchLastSeen).mockResolvedValue(ok(undefined))
 
-    await receiveVehicleStatusUseCase(baseInput)
+    await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
 
     expect(sendPoweredAlertIfDue).toHaveBeenCalledWith(expect.objectContaining({ alreadySent: true }))
   })
@@ -327,7 +352,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(haversineDistanceMeters).mockReturnValue(DEDUP_DISTANCE_METERS + 1)
     vi.mocked(vehicleTrackingRepository.recordVehiclePoint).mockResolvedValue(ok(undefined))
 
-    const result = await receiveVehicleStatusUseCase(baseInput)
+    const result = await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
 
     expect(result).toEqual(ok(undefined))
     expect(vehicleTrackingRepository.recordVehiclePoint).toHaveBeenCalled()
@@ -346,7 +371,7 @@ describe('receiveVehicleStatusUseCase', () => {
     vi.mocked(haversineDistanceMeters).mockReturnValue(0)
     vi.mocked(vehicleTrackingRepository.recordVehiclePoint).mockResolvedValue(ok(undefined))
 
-    const result = await receiveVehicleStatusUseCase(baseInput)
+    const result = await receiveVehicleStatusUseCase(baseInput, baseInput.timestamp)
 
     expect(result).toEqual(ok(undefined))
     expect(vehicleTrackingRepository.recordVehiclePoint).toHaveBeenCalled()
