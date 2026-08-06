@@ -1,4 +1,10 @@
 const EARTH_RADIUS_METERS = 6371000
+const COORDINATE_DECIMALS = 5
+
+export function roundCoordinate(value: number): number {
+  const factor = 10 ** COORDINATE_DECIMALS
+  return Math.round(value * factor) / factor
+}
 
 export function haversineDistanceMeters(
   a: { lat: number; lng: number },

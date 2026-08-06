@@ -48,6 +48,7 @@ vi.mock('./api-key', () => ({
 
 vi.mock('./geo', () => ({
   haversineDistanceMeters: vi.fn(),
+  roundCoordinate: (value: number) => value,
 }))
 
 vi.mock('./powered-alert-use-case', () => ({

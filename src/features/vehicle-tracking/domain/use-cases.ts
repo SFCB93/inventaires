@@ -4,7 +4,7 @@ import type { Result } from '@/shared/domain/result'
 import { inventoryRepository } from '@/features/inventories/data/repository'
 import { vehicleTrackingRepository } from '../data/repository'
 import { generateApiKey, hashApiKey } from './api-key'
-import { haversineDistanceMeters } from './geo'
+import { haversineDistanceMeters, roundCoordinate } from './geo'
 import { sendPoweredAlertIfDue } from './powered-alert-use-case'
 import { DEDUP_DISTANCE_METERS, MIN_PING_INTERVAL_SECONDS, MS_PER_SECOND, MS_PER_HOUR, TIME_RANGE_HOURS, ERROR_UNAUTHORIZED, ERROR_RATE_LIMITED } from './constants'
 import type { VehicleStatus, UnlinkedInventory, PositionPoint, TimeRange } from './types'
@@ -73,6 +73,9 @@ export async function receiveVehicleStatusUseCase(input: ReceiveVehicleStatusInp
   if (Number.isNaN(input.lng) || input.lng < -180 || input.lng > 180) return err('Longitude invalide.')
   if (Number.isNaN(input.timestamp.getTime())) return err('Horodatage invalide.')
 
+  const lat = roundCoordinate(input.lat)
+  const lng = roundCoordinate(input.lng)
+
   const device = await vehicleTrackingRepository.findDeviceByKeyHash(hashApiKey(input.apiKey))
   if (!device.ok) return device
   if (!device.value) return err(ERROR_UNAUTHORIZED)
@@ -90,7 +93,7 @@ export async function receiveVehicleStatusUseCase(input: ReceiveVehicleStatusInp
     const secondsSinceLastSeen = (input.timestamp.getTime() - current.value.lastSeenAt.getTime()) / MS_PER_SECOND
     if (secondsSinceLastSeen < MIN_PING_INTERVAL_SECONDS) return err(ERROR_RATE_LIMITED)
 
-    const distance = haversineDistanceMeters(current.value, input)
+    const distance = haversineDistanceMeters(current.value, { lat, lng })
     const isUnchanged = distance < DEDUP_DISTANCE_METERS && current.value.isCircuitCut === input.isCircuitCut
     if (isUnchanged) {
       const touchResult = await vehicleTrackingRepository.touchLastSeen(inventoryId, input.timestamp)
@@ -112,8 +115,8 @@ export async function receiveVehicleStatusUseCase(input: ReceiveVehicleStatusInp
   return vehicleTrackingRepository.recordVehiclePoint({
     inventoryId,
     associationId,
-    lat: input.lat,
-    lng: input.lng,
+    lat,
+    lng,
     isCircuitCut: input.isCircuitCut,
     timestamp: input.timestamp,
   })
