@@ -57,11 +57,6 @@ export function VehicleLogbookPage({ inventory, compartments, lastExpiryDates }:
         onLitersChange={fuel.setLiters}
         amount={fuel.amount}
         onAmountChange={fuel.setAmount}
-        fileName={fuel.fileName}
-        isUploading={fuel.isUploading}
-        fileInputRef={fuel.fileInputRef}
-        onFileChange={fuel.handleFileChange}
-        onRemoveFile={fuel.handleRemoveFile}
         isSubmitting={fuel.isSubmitting}
         error={fuel.error}
         onSubmit={fuel.handleSubmit}
@@ -88,11 +83,6 @@ export function VehicleLogbookPage({ inventory, compartments, lastExpiryDates }:
       <MaintenanceLogForm
         description={maintenance.description}
         onDescriptionChange={maintenance.setDescription}
-        fileName={maintenance.fileName}
-        isUploading={maintenance.isUploading}
-        fileInputRef={maintenance.fileInputRef}
-        onFileChange={maintenance.handleFileChange}
-        onRemoveFile={maintenance.handleRemoveFile}
         isSubmitting={maintenance.isSubmitting}
         error={maintenance.error}
         onSubmit={maintenance.handleSubmit}

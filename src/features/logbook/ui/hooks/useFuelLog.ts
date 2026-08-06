@@ -2,10 +2,8 @@
 
 import { useState } from 'react'
 import { logFuelAction } from '../../domain/actions'
-import { useDocumentUpload } from './useDocumentUpload'
 
 export function useFuelLog(inventoryId: string, driverName: string, onSuccess: () => void) {
-  const upload = useDocumentUpload(inventoryId)
   const [liters, setLiters] = useState('')
   const [amount, setAmount] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -19,7 +17,6 @@ export function useFuelLog(inventoryId: string, driverName: string, onSuccess: (
       submittedBy: driverName,
       fuelLiters: Number(liters),
       amountEuros: amount ? Number(amount) : undefined,
-      documentUrl: upload.documentUrl,
     })
     setIsSubmitting(false)
     if (!result.ok) {
@@ -28,7 +25,6 @@ export function useFuelLog(inventoryId: string, driverName: string, onSuccess: (
     }
     setLiters('')
     setAmount('')
-    upload.handleRemoveFile()
     onSuccess()
   }
 
@@ -37,13 +33,8 @@ export function useFuelLog(inventoryId: string, driverName: string, onSuccess: (
     setLiters,
     amount,
     setAmount,
-    fileName: upload.fileName,
-    isUploading: upload.isUploading,
-    fileInputRef: upload.fileInputRef,
-    handleFileChange: upload.handleFileChange,
-    handleRemoveFile: upload.handleRemoveFile,
     isSubmitting,
-    error: error ?? upload.uploadError,
+    error,
     handleSubmit,
   }
 }

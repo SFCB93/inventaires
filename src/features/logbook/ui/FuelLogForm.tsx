@@ -1,18 +1,12 @@
 'use client'
 
 import { LogFormHeader } from './LogFormHeader'
-import { DocumentPickerField } from './DocumentPickerField'
 
 interface FuelLogFormProps {
   liters: string
   onLitersChange: (value: string) => void
   amount: string
   onAmountChange: (value: string) => void
-  fileName: string | null
-  isUploading?: boolean
-  fileInputRef: React.RefObject<HTMLInputElement | null>
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  onRemoveFile: () => void
   isSubmitting?: boolean
   error?: string
   onSubmit: () => void
@@ -24,11 +18,6 @@ export function FuelLogForm({
   onLitersChange,
   amount,
   onAmountChange,
-  fileName,
-  isUploading = false,
-  fileInputRef,
-  onFileChange,
-  onRemoveFile,
   isSubmitting = false,
   error,
   onSubmit,
@@ -70,14 +59,6 @@ export function FuelLogForm({
             className="w-full h-12 rounded-xl border-2 border-slate-200 px-3 text-base focus:outline-none focus:border-blue-500 transition-colors"
           />
         </div>
-
-        <DocumentPickerField
-          fileName={fileName}
-          isUploading={isUploading}
-          fileInputRef={fileInputRef}
-          onFileChange={onFileChange}
-          onRemove={onRemoveFile}
-        />
 
         {error && (
           <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>

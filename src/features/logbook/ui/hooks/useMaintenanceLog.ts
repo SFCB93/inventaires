@@ -2,10 +2,8 @@
 
 import { useState } from 'react'
 import { logMaintenanceAction } from '../../domain/actions'
-import { useDocumentUpload } from './useDocumentUpload'
 
 export function useMaintenanceLog(inventoryId: string, driverName: string, onSuccess: () => void) {
-  const upload = useDocumentUpload(inventoryId)
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
@@ -17,7 +15,6 @@ export function useMaintenanceLog(inventoryId: string, driverName: string, onSuc
       inventoryId,
       submittedBy: driverName,
       description,
-      documentUrl: upload.documentUrl,
     })
     setIsSubmitting(false)
     if (!result.ok) {
@@ -25,20 +22,14 @@ export function useMaintenanceLog(inventoryId: string, driverName: string, onSuc
       return
     }
     setDescription('')
-    upload.handleRemoveFile()
     onSuccess()
   }
 
   return {
     description,
     setDescription,
-    fileName: upload.fileName,
-    isUploading: upload.isUploading,
-    fileInputRef: upload.fileInputRef,
-    handleFileChange: upload.handleFileChange,
-    handleRemoveFile: upload.handleRemoveFile,
     isSubmitting,
-    error: error ?? upload.uploadError,
+    error,
     handleSubmit,
   }
 }

@@ -1,16 +1,10 @@
 'use client'
 
 import { LogFormHeader } from './LogFormHeader'
-import { DocumentPickerField } from './DocumentPickerField'
 
 interface MaintenanceLogFormProps {
   description: string
   onDescriptionChange: (value: string) => void
-  fileName: string | null
-  isUploading?: boolean
-  fileInputRef: React.RefObject<HTMLInputElement | null>
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  onRemoveFile: () => void
   isSubmitting?: boolean
   error?: string
   onSubmit: () => void
@@ -20,11 +14,6 @@ interface MaintenanceLogFormProps {
 export function MaintenanceLogForm({
   description,
   onDescriptionChange,
-  fileName,
-  isUploading = false,
-  fileInputRef,
-  onFileChange,
-  onRemoveFile,
   isSubmitting = false,
   error,
   onSubmit,
@@ -49,14 +38,6 @@ export function MaintenanceLogForm({
             className="w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-base resize-none focus:outline-none focus:border-blue-500 transition-colors"
           />
         </div>
-
-        <DocumentPickerField
-          fileName={fileName}
-          isUploading={isUploading}
-          fileInputRef={fileInputRef}
-          onFileChange={onFileChange}
-          onRemove={onRemoveFile}
-        />
 
         {error && (
           <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>
