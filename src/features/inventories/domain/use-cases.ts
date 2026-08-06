@@ -70,14 +70,19 @@ export async function createCompartmentUseCase(
 }
 
 export async function updateCompartmentUseCase(
+  inventoryId: string,
   compartmentId: string,
   name: string,
 ): Promise<Result<void>> {
   if (!name.trim()) return err("Le nom de l'emplacement est obligatoire.")
+  const owned = await inventoryRepository.checkCompartmentOwnership(compartmentId, inventoryId)
+  if (!owned.ok) return owned
   return inventoryRepository.updateCompartment(compartmentId, name.trim())
 }
 
-export async function deleteCompartmentUseCase(compartmentId: string): Promise<Result<void>> {
+export async function deleteCompartmentUseCase(inventoryId: string, compartmentId: string): Promise<Result<void>> {
+  const owned = await inventoryRepository.checkCompartmentOwnership(compartmentId, inventoryId)
+  if (!owned.ok) return owned
   return inventoryRepository.deleteCompartment(compartmentId)
 }
 
@@ -86,14 +91,19 @@ export async function reorderCompartmentsUseCase(
   orderedIds: string[],
 ): Promise<Result<void>> {
   if (orderedIds.length === 0) return ok(undefined)
+  const owned = await inventoryRepository.checkCompartmentIdsOwnership(inventoryId, orderedIds)
+  if (!owned.ok) return owned
   return inventoryRepository.reorderCompartments(inventoryId, orderedIds)
 }
 
 export async function createItemUseCase(
+  inventoryId: string,
   compartmentId: string,
   data: { name: string; photoUrl: string; hasExpiry: boolean; isCritical: boolean },
 ): Promise<Result<Item>> {
   if (!data.name.trim()) return err("Le nom du matériel est obligatoire.")
+  const owned = await inventoryRepository.checkCompartmentOwnership(compartmentId, inventoryId)
+  if (!owned.ok) return owned
   return inventoryRepository.createItem(compartmentId, {
     name: data.name.trim(),
     photoUrl: data.photoUrl,
@@ -103,24 +113,34 @@ export async function createItemUseCase(
 }
 
 export async function updateItemUseCase(
+  inventoryId: string,
   itemId: string,
   data: { name?: string; photoUrl?: string; hasExpiry?: boolean; isCritical?: boolean },
 ): Promise<Result<void>> {
   if (data.name !== undefined && !data.name.trim()) return err("Le nom du matériel est obligatoire.")
+  const owned = await inventoryRepository.checkItemOwnership(itemId, inventoryId)
+  if (!owned.ok) return owned
   return inventoryRepository.updateItem(itemId, {
     ...data,
     name: data.name?.trim(),
   })
 }
 
-export async function deleteItemUseCase(itemId: string): Promise<Result<void>> {
+export async function deleteItemUseCase(inventoryId: string, itemId: string): Promise<Result<void>> {
+  const owned = await inventoryRepository.checkItemOwnership(itemId, inventoryId)
+  if (!owned.ok) return owned
   return inventoryRepository.deleteItem(itemId)
 }
 
 export async function reorderItemsUseCase(
+  inventoryId: string,
   compartmentId: string,
   orderedIds: string[],
 ): Promise<Result<void>> {
   if (orderedIds.length === 0) return ok(undefined)
+  const ownedCompartment = await inventoryRepository.checkCompartmentOwnership(compartmentId, inventoryId)
+  if (!ownedCompartment.ok) return ownedCompartment
+  const owned = await inventoryRepository.checkItemIdsOwnership(compartmentId, orderedIds)
+  if (!owned.ok) return owned
   return inventoryRepository.reorderItems(compartmentId, orderedIds)
 }

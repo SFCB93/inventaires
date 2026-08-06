@@ -57,7 +57,7 @@ export async function updateCompartmentAction(inventoryId: string, compartmentId
   if (!user) return err('Non authentifié.')
   const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
   if (!owned.ok) return err('Accès non autorisé.')
-  const result = await uc.updateCompartmentUseCase(compartmentId, name)
+  const result = await uc.updateCompartmentUseCase(inventoryId, compartmentId, name)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
 }
@@ -66,7 +66,7 @@ export async function deleteCompartmentAction(inventoryId: string, compartmentId
   if (!user) return err('Non authentifié.')
   const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
   if (!owned.ok) return err('Accès non autorisé.')
-  const result = await uc.deleteCompartmentUseCase(compartmentId)
+  const result = await uc.deleteCompartmentUseCase(inventoryId, compartmentId)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
 }
@@ -84,7 +84,7 @@ export async function createItemAction(inventoryId: string, data: { compartmentI
   if (!user) return err('Non authentifié.')
   const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
   if (!owned.ok) return err('Accès non autorisé.')
-  const result = await uc.createItemUseCase(data.compartmentId, { name: data.name, photoUrl: data.photoUrl, hasExpiry: data.hasExpiry, isCritical: data.isCritical })
+  const result = await uc.createItemUseCase(inventoryId, data.compartmentId, { name: data.name, photoUrl: data.photoUrl, hasExpiry: data.hasExpiry, isCritical: data.isCritical })
   if (result.ok) revalidatePath(path(inventoryId))
   return result
 }
@@ -93,7 +93,7 @@ export async function updateItemAction(inventoryId: string, itemId: string, data
   if (!user) return err('Non authentifié.')
   const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
   if (!owned.ok) return err('Accès non autorisé.')
-  const result = await uc.updateItemUseCase(itemId, data)
+  const result = await uc.updateItemUseCase(inventoryId, itemId, data)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
 }
@@ -102,7 +102,7 @@ export async function deleteItemAction(inventoryId: string, itemId: string): Pro
   if (!user) return err('Non authentifié.')
   const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
   if (!owned.ok) return err('Accès non autorisé.')
-  const result = await uc.deleteItemUseCase(itemId)
+  const result = await uc.deleteItemUseCase(inventoryId, itemId)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
 }
@@ -111,7 +111,7 @@ export async function reorderItemsAction(inventoryId: string, compartmentId: str
   if (!user) return err('Non authentifié.')
   const owned = await uc.verifyInventoryOwnershipUseCase(inventoryId, user.associationId)
   if (!owned.ok) return err('Accès non autorisé.')
-  const result = await uc.reorderItemsUseCase(compartmentId, orderedIds)
+  const result = await uc.reorderItemsUseCase(inventoryId, compartmentId, orderedIds)
   if (result.ok) revalidatePath(path(inventoryId))
   return result
 }
