@@ -154,4 +154,10 @@ describe('submitControlUseCase', () => {
     const result = await submitControlUseCase(mockSubmission, mockEmailContext)
     expect(result.ok).toBe(false)
   })
+
+  it("ne bloque pas la réponse tant que l'envoi du mail n'est pas résolu (fire-and-forget)", async () => {
+    vi.mocked(validatorRepository.getAssociationEmails).mockReturnValue(new Promise(() => {}))
+    const result = await submitControlUseCase(mockSubmission, mockEmailContext)
+    expect(result.ok).toBe(true)
+  })
 })

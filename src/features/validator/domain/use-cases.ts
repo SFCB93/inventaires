@@ -41,24 +41,34 @@ export async function submitControlUseCase(
   const result = await validatorRepository.saveControl(submission, associationId)
   if (!result.ok) return result
 
-  // Non-blocking: email failure does not fail the control
+  // Fire-and-forget : ne bloque pas la réponse au vérificateur sur l'envoi du mail
   if (associationId) {
-    const assocEmailResult = await validatorRepository.getAssociationEmails(associationId)
-    if (assocEmailResult.ok) {
-      await sendControlCompletedEmail(
-        emailContext,
-        submission.verifierName,
-        submission.results.length,
-        assocEmailResult.value.emails,
-        assocEmailResult.value.name,
-        new Date().toLocaleDateString('fr-FR', {
-          day: '2-digit', month: '2-digit', year: 'numeric',
-          hour: '2-digit', minute: '2-digit',
-        }),
-        assocEmailResult.value.alertThresholdDays,
-      )
-    }
+    notifyControlCompleted(associationId, submission, emailContext).catch((error) =>
+      console.error('[submitControlUseCase] notification échouée', error),
+    )
   }
 
   return result
+}
+
+async function notifyControlCompleted(
+  associationId: string,
+  submission: ControlSubmission,
+  emailContext: ControlEmailContext,
+): Promise<void> {
+  const assocEmailResult = await validatorRepository.getAssociationEmails(associationId)
+  if (!assocEmailResult.ok) return
+
+  await sendControlCompletedEmail(
+    emailContext,
+    submission.verifierName,
+    submission.results.length,
+    assocEmailResult.value.emails,
+    assocEmailResult.value.name,
+    new Date().toLocaleDateString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    }),
+    assocEmailResult.value.alertThresholdDays,
+  )
 }
